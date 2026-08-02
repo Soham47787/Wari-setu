@@ -1,0 +1,6 @@
+{
+  "name": "WariSeva",
+  "description": "Multilingual pilgrimage companion for Pandharpur Wari pilgrims with live crowd status, e-Darshan tokens, interactive maps, stays, lost & found, and emergency SOS.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
