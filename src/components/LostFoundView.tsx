@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Language, LostItem } from '../types';
 import { getTranslation } from '../translations';
-import { Search, UserX, Phone, Radio, PlusCircle, AlertCircle, Volume2, Camera } from 'lucide-react';
+import { Search, UserCheck, PlusCircle, Phone, MapPin, Calendar, AlertCircle, ShieldCheck, User } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface LostFoundViewProps {
   language: Language;
@@ -14,318 +15,320 @@ export const LostFoundView: React.FC<LostFoundViewProps> = ({
   lostItems,
   onAddLostItem,
 }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState<'all' | 'person' | 'belonging'>('all');
   const [showModal, setShowModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState<'all' | 'person' | 'belonging'>('all');
 
-  // Form states
-  const [name, setName] = useState('');
+  // New Item Form State
+  const [personName, setPersonName] = useState('');
   const [age, setAge] = useState('');
-  const [lastSeen, setLastSeen] = useState('');
-  const [contactPerson, setContactPerson] = useState('');
+  const [itemType, setItemType] = useState<'person' | 'belonging'>('person');
+  const [lastLocation, setLastLocation] = useState('');
   const [contactPhone, setContactPhone] = useState('');
-  const [desc, setDesc] = useState('');
-  const [photoUrl, setPhotoUrl] = useState('https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&auto=format&fit=crop&q=80');
+  const [description, setDescription] = useState('');
 
-  const handleFormSubmit = (e: React.FormEvent) => {
+  const handleCreateReport = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !contactPhone) {
-      alert("कृपया नाव व फोन नंबर प्रविष्ट करा (Please fill required fields)");
+    if (!personName.trim() || !contactPhone.trim() || !lastLocation.trim()) {
+      alert("कृपया आवश्यक माहिती भरा / Please enter mandatory details");
       return;
     }
 
     const newItem: LostItem = {
       id: `lost_${Date.now()}`,
-      type: 'person',
-      name,
+      name: personName,
       age: age ? Number(age) : undefined,
-      photoUrl: photoUrl || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&auto=format&fit=crop&q=80',
-      lastSeenLocation: { mr: lastSeen, hi: lastSeen, en: lastSeen },
-      missingSince: 'ताजी नोंदणी (Just Now)',
-      contactPerson,
+      type: itemType,
+      photoUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80",
+      lastSeenLocation: {
+        mr: lastLocation,
+        hi: lastLocation,
+        en: lastLocation
+      },
+      contactPerson: personName,
       contactPhone,
-      description: { mr: desc, hi: desc, en: desc },
-      status: 'missing'
+      description: {
+        mr: description || lastLocation,
+        hi: description || lastLocation,
+        en: description || lastLocation
+      },
+      status: 'missing',
+      missingSince: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
     };
 
     onAddLostItem(newItem);
     setShowModal(false);
-    // Reset form
-    setName('');
+    setPersonName('');
     setAge('');
-    setLastSeen('');
+    setLastLocation('');
     setContactPhone('');
-    setDesc('');
-    alert("हरवलेल्या व्यक्तीची नोंदणी यशस्वी झाली आहे! (Missing report registered)");
+    setDescription('');
+
+    alert("हरवल्याची नोंदणी यशस्वीपणे झाली आहे. वारकरी सेवा कक्ष मदत करेल.");
   };
 
-  const handleAudioBroadcast = (item: LostItem) => {
-    if ('speechSynthesis' in window) {
-      const msg = `लक्ष द्या! वारकरी सेवा हरवलेले व्यक्ति सूचना. नाव: ${item.name}. वय: ${item.age || ''} वर्ष. शेवटचे ठिकाण: ${item.lastSeenLocation[language]}. सापडल्यास संपर्क साधा: ${item.contactPhone}`;
-      const utterance = new SpeechSynthesisUtterance(msg);
-      utterance.lang = 'mr-IN';
-      utterance.rate = 0.85;
-      window.speechSynthesis.speak(utterance);
-    } else {
-      alert(`Broadcast announcement triggered for ${item.name}`);
-    }
-  };
-
-  const filtered = lostItems.filter(item => {
+  const filteredItems = lostItems.filter((item) => {
+    const locationStr = typeof item.lastSeenLocation === 'string'
+      ? item.lastSeenLocation
+      : (item.lastSeenLocation[language] || item.lastSeenLocation.mr);
+    const matchesQuery = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         locationStr.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesType = filterType === 'all' || item.type === filterType;
-    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          item.lastSeenLocation[language].toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesType && matchesSearch;
+    return matchesQuery && matchesType;
   });
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Header Banner */}
-      <div className="bg-amber-900 text-white p-5 rounded-2xl shadow-md border border-amber-700 space-y-4">
-        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
-          <div>
-            <h2 className="text-xl sm:text-2xl font-bold font-serif flex items-center space-x-2">
-              <span>🔍</span>
-              <span>{getTranslation(language, 'lostHeader')}</span>
-            </h2>
-            <p className="text-xs sm:text-sm text-amber-200 mt-1">
-              गर्दीत हरवलेल्या प्रिय व्यक्ती किंवा सापडलेल्या वस्तूंची माहिती तातडीने मिळवा.
-            </p>
-          </div>
+      {/* Header Banner - Slate Charcoal & Golden Orange */}
+      <div className="bg-gradient-to-r from-[#1E1B18] via-[#2A241F] to-[#141210] rounded-3xl p-6 text-white shadow-xl border border-amber-500/20 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <span className="bg-orange-500/20 text-orange-300 text-[10px] font-black px-2.5 py-0.5 rounded-full border border-orange-500/30 uppercase tracking-widest">
+            शोध कक्ष (LOST & FOUND HELPDESK)
+          </span>
+          <h2 className="text-2xl sm:text-3xl font-black font-serif tracking-tight text-amber-100 mt-1">
+            {getTranslation(language, 'cardLostTitle')}
+          </h2>
+          <p className="text-stone-300 text-xs sm:text-sm mt-1">
+            वारीतील हरवलेले नातेवाईक, लहान मुले किंवा मौल्यवान वस्तू शोधण्यासाठी साहाय्य.
+          </p>
+        </div>
 
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => setShowModal(true)}
+          className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-bold text-xs py-3 px-5 rounded-2xl shadow-md transition-all flex items-center space-x-2 shrink-0 border border-amber-500/30"
+        >
+          <PlusCircle className="w-4 h-4 text-amber-200" />
+          <span>{language === 'mr' ? 'हरवल्याची नोंद करा' : 'Report Missing'}</span>
+        </motion.button>
+      </div>
+
+      {/* Search & Filter Bar */}
+      <div className="bg-white p-4 rounded-3xl border border-stone-200/90 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-3">
+        <div className="relative w-full sm:w-80">
+          <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-3.5" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="नाव किंवा ठिकाणाने शोधा..."
+            className="w-full pl-10 pr-4 py-2.5 text-xs rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-amber-500/50 bg-stone-50"
+          />
+        </div>
+
+        <div className="flex items-center space-x-2 w-full sm:w-auto">
           <button
-            onClick={() => setShowModal(true)}
-            className="bg-amber-400 hover:bg-amber-300 text-amber-950 font-extrabold text-xs sm:text-sm px-4 py-2.5 rounded-xl shadow-lg transition-all flex items-center justify-center space-x-1.5 shrink-0"
+            onClick={() => setFilterType('all')}
+            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all ${
+              filterType === 'all' ? 'bg-amber-900 text-amber-100' : 'bg-stone-100 text-stone-600'
+            }`}
           >
-            <PlusCircle className="w-4 h-4" />
-            <span>{getTranslation(language, 'reportMissingBtn')}</span>
+            सर्व
+          </button>
+          <button
+            onClick={() => setFilterType('person')}
+            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all ${
+              filterType === 'person' ? 'bg-amber-900 text-amber-100' : 'bg-stone-100 text-stone-600'
+            }`}
+          >
+            👤 व्यक्ती / नातेवाईक
+          </button>
+          <button
+            onClick={() => setFilterType('belonging')}
+            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all ${
+              filterType === 'belonging' ? 'bg-amber-900 text-amber-100' : 'bg-stone-100 text-stone-600'
+            }`}
+          >
+            🎒 वस्तू / सामान
           </button>
         </div>
-
-        {/* Search Bar & Filter Tabs */}
-        <div className="flex flex-col sm:flex-row gap-3 pt-2">
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 absolute left-3 top-3 text-amber-600" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder={getTranslation(language, 'searchByName')}
-              className="w-full pl-9 pr-4 py-2 text-xs sm:text-sm text-amber-950 bg-white rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400 font-medium"
-            />
-          </div>
-
-          <div className="flex space-x-1 bg-amber-950/60 p-1 rounded-xl border border-amber-700/60 shrink-0">
-            <button
-              onClick={() => setFilterType('all')}
-              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                filterType === 'all' ? 'bg-amber-400 text-amber-950' : 'text-amber-100 hover:bg-amber-800'
-              }`}
-            >
-              सर्व (All)
-            </button>
-            <button
-              onClick={() => setFilterType('person')}
-              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                filterType === 'person' ? 'bg-amber-400 text-amber-950' : 'text-amber-100 hover:bg-amber-800'
-              }`}
-            >
-              👤 व्यक्ती (Persons)
-            </button>
-            <button
-              onClick={() => setFilterType('belonging')}
-              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                filterType === 'belonging' ? 'bg-amber-400 text-amber-950' : 'text-amber-100 hover:bg-amber-800'
-              }`}
-            >
-              🎒 वस्तू (Items)
-            </button>
-          </div>
-        </div>
       </div>
 
-      {/* Missing Persons / Items Gallery Grid */}
+      {/* Lost Items Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filtered.map((item) => (
-          <div
-            key={item.id}
-            className="bg-white rounded-2xl overflow-hidden shadow-md border border-amber-200 hover:shadow-xl transition-all flex flex-col justify-between"
-          >
-            <div className="space-y-3">
-              {/* Image Container with Badge */}
-              <div className="relative h-48 bg-amber-100 overflow-hidden">
-                <img
-                  src={item.photoUrl}
-                  alt={item.name}
-                  referrerPolicy="no-referrer"
-                  className="w-full h-full object-cover"
-                />
-                <span className="absolute top-2 left-2 bg-red-600 text-white text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase shadow">
-                  🚨 {item.status === 'missing' ? 'हरवले आहे (MISSING)' : 'सापडले (FOUND)'}
-                </span>
-                {item.age && (
-                  <span className="absolute bottom-2 right-2 bg-amber-950/80 text-amber-200 text-xs font-bold px-2 py-0.5 rounded-md">
-                    वय: {item.age} वर्षे
+        {filteredItems.map((item) => {
+          const locationStr = typeof item.lastSeenLocation === 'string'
+            ? item.lastSeenLocation
+            : (item.lastSeenLocation[language] || item.lastSeenLocation.mr);
+          const descStr = typeof item.description === 'string'
+            ? item.description
+            : (item.description[language] || item.description.mr);
+
+          return (
+            <motion.div
+              key={item.id}
+              whileHover={{ y: -4 }}
+              className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-xl border border-stone-200/90 flex flex-col justify-between space-y-4 transition-all"
+            >
+              <div className="space-y-3">
+                <div className="flex justify-between items-start">
+                  <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase ${
+                    item.type === 'person' ? 'bg-orange-100 text-orange-900 border border-orange-200' : 'bg-stone-100 text-stone-800 border border-stone-200'
+                  }`}>
+                    {item.type === 'person' ? '👤 व्यक्ती हरवली' : '🎒 वस्तू हरवली'}
                   </span>
-                )}
-              </div>
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${
+                    item.status === 'missing' ? 'bg-rose-100 text-rose-800' : 'bg-emerald-100 text-emerald-800'
+                  }`}>
+                    {item.status === 'missing' ? 'हरवलेले (Missing)' : 'सापडले (Found)'}
+                  </span>
+                </div>
 
-              {/* Content Details */}
-              <div className="p-4 space-y-2">
-                <h3 className="font-extrabold text-base text-amber-950 font-serif">
-                  {item.name}
-                </h3>
-
-                <div className="space-y-1 text-xs text-amber-900">
-                  <p>
-                    <strong className="text-amber-800">शेवटचे ठिकाण:</strong> {item.lastSeenLocation[language]}
-                  </p>
-                  <p>
-                    <strong className="text-amber-800">हरवल्याची वेळ:</strong> {item.missingSince}
-                  </p>
-                  <p className="text-amber-800/90 text-[11px] bg-amber-50 p-2 rounded-lg border border-amber-200">
-                    {item.description[language]}
+                <div>
+                  <h3 className="text-lg font-bold text-stone-900 font-serif">
+                    {item.name} {item.age ? `(${item.age} वर्षे)` : ''}
+                  </h3>
+                  <p className="text-xs text-stone-600 font-sans mt-1 leading-relaxed">
+                    {descStr}
                   </p>
                 </div>
+
+                <div className="bg-stone-50 p-3 rounded-2xl border border-stone-100 space-y-1.5 text-xs text-stone-700">
+                  <div className="flex items-center space-x-1 font-semibold text-stone-800">
+                    <MapPin className="w-3.5 h-3.5 text-stone-400" />
+                    <span>शेवटचे ठिकाण: <strong>{locationStr}</strong></span>
+                  </div>
+                  <div className="flex items-center space-x-1 text-stone-500 text-[11px]">
+                    <Calendar className="w-3.5 h-3.5 text-stone-400" />
+                    <span>पासून हरवले: {item.missingSince}</span>
+                  </div>
+                </div>
               </div>
-            </div>
 
-            {/* Actions Footer */}
-            <div className="p-4 border-t border-amber-100 bg-amber-50/50 flex gap-2">
-              <a
-                href={`tel:${item.contactPhone}`}
-                className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2 rounded-xl text-center shadow transition-all flex items-center justify-center space-x-1"
-              >
-                <Phone className="w-3.5 h-3.5" />
-                <span>संपर्क करा</span>
-              </a>
-
-              <button
-                onClick={() => handleAudioBroadcast(item)}
-                title="Broadcast Audio Alert on Speaker"
-                className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs px-3 py-2 rounded-xl shadow transition-all flex items-center justify-center space-x-1"
-              >
-                <Volume2 className="w-4 h-4" />
-                <span className="hidden sm:inline">ध्वनी घोषणा</span>
-              </button>
-            </div>
-          </div>
-        ))}
+              <div className="pt-2 border-t border-stone-100 flex justify-between items-center text-xs">
+                <span className="text-stone-500 font-semibold">संपर्क करा:</span>
+                <a
+                  href={`tel:${item.contactPhone}`}
+                  className="bg-amber-100 hover:bg-amber-200 text-amber-950 font-extrabold px-3.5 py-2 rounded-xl transition-all flex items-center space-x-1.5"
+                >
+                  <Phone className="w-3.5 h-3.5" />
+                  <span>{item.contactPhone}</span>
+                </a>
+              </div>
+            </motion.div>
+          );
+        })}
       </div>
 
-      {/* REPORT MISSING MODAL FORM */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border-2 border-amber-400 space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center border-b border-amber-200 pb-3">
-              <h3 className="text-lg font-bold text-amber-950 font-serif">
-                हरवलेल्या व्यक्तीची नोंदणी करा
-              </h3>
-              <button
-                onClick={() => setShowModal(false)}
-                className="text-amber-800 font-bold text-lg p-1"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleFormSubmit} className="space-y-3 text-xs sm:text-sm">
-              <div>
-                <label className="block font-bold text-amber-900 mb-1">
-                  हरवलेल्या व्यक्तीचे पूर्ण नाव *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="उदा. बबनराव मारुती शिंदे"
-                  className="w-full px-3 py-2 border border-amber-300 rounded-xl bg-amber-50/40"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-amber-900 mb-1">वय (Age)</label>
-                  <input
-                    type="number"
-                    value={age}
-                    onChange={(e) => setAge(e.target.value)}
-                    placeholder="उदा. ६५"
-                    className="w-full px-3 py-2 border border-amber-300 rounded-xl bg-amber-50/40"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-amber-900 mb-1">मोबाईल नंबर *</label>
-                  <input
-                    type="tel"
-                    required
-                    value={contactPhone}
-                    onChange={(e) => setContactPhone(e.target.value)}
-                    placeholder="९८२२०XXXXX"
-                    className="w-full px-3 py-2 border border-amber-300 rounded-xl bg-amber-50/40"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-bold text-amber-900 mb-1">
-                  शेवटचे पाहिलेले ठिकाण *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={lastSeen}
-                  onChange={(e) => setLastSeen(e.target.value)}
-                  placeholder="उदा. महाद्वार घाट दर्शन रांगेजवळ"
-                  className="w-full px-3 py-2 border border-amber-300 rounded-xl bg-amber-50/40"
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold text-amber-900 mb-1">
-                  कपडे व ओळखीचे वर्णन (Description)
-                </label>
-                <textarea
-                  rows={2}
-                  value={desc}
-                  onChange={(e) => setDesc(e.target.value)}
-                  placeholder="उदा. पांढरा कुर्ता धोतर, डोक्यावर वारकरी टोपी"
-                  className="w-full px-3 py-2 border border-amber-300 rounded-xl bg-amber-50/40"
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold text-amber-900 mb-1">
-                  फोटो युआरएल (Photo URL Preview)
-                </label>
-                <input
-                  type="url"
-                  value={photoUrl}
-                  onChange={(e) => setPhotoUrl(e.target.value)}
-                  className="w-full px-3 py-2 border border-amber-300 rounded-xl bg-amber-50/40 text-xs"
-                />
-              </div>
-
-              <div className="pt-2 flex gap-2">
+      {/* Report Lost Modal */}
+      <AnimatePresence>
+        {showModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/70 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-stone-200 space-y-5"
+            >
+              <div className="flex justify-between items-center border-b border-stone-100 pb-3">
+                <h3 className="text-lg font-bold text-stone-900 font-serif">
+                  {language === 'mr' ? 'हरवल्याची नोंद करा' : 'Report Missing Person/Item'}
+                </h3>
                 <button
-                  type="button"
                   onClick={() => setShowModal(false)}
-                  className="flex-1 bg-amber-100 text-amber-900 font-bold py-2.5 rounded-xl"
+                  className="w-8 h-8 rounded-full bg-stone-100 text-stone-500 hover:bg-stone-200 flex items-center justify-center font-bold"
                 >
-                  रद्द करा
+                  ✕
                 </button>
+              </div>
+
+              <form onSubmit={handleCreateReport} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">प्रकार निवडा</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setItemType('person')}
+                      className={`py-2 px-3 text-xs font-bold rounded-xl border ${
+                        itemType === 'person' ? 'bg-amber-900 text-amber-100 border-amber-900' : 'bg-stone-50 text-stone-700'
+                      }`}
+                    >
+                      👤 व्यक्ती / नातेवाईक
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setItemType('belonging')}
+                      className={`py-2 px-3 text-xs font-bold rounded-xl border ${
+                        itemType === 'belonging' ? 'bg-amber-900 text-amber-100 border-amber-900' : 'bg-stone-50 text-stone-700'
+                      }`}
+                    >
+                      🎒 वस्तू / बॅग
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-bold text-stone-700 mb-1">नाव / वस्तूचे नाव *</label>
+                    <input
+                      type="text"
+                      required
+                      value={personName}
+                      onChange={(e) => setPersonName(e.target.value)}
+                      placeholder="उदा. मारुती सुतार"
+                      className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-amber-500/50 bg-stone-50"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-stone-700 mb-1">वय (Age)</label>
+                    <input
+                      type="number"
+                      value={age}
+                      onChange={(e) => setAge(e.target.value)}
+                      placeholder="उदा. ६५"
+                      className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-amber-500/50 bg-stone-50"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-stone-700 mb-1">शेवटचे ठिकाण *</label>
+                    <input
+                      type="text"
+                      required
+                      value={lastLocation}
+                      onChange={(e) => setLastLocation(e.target.value)}
+                      placeholder="उदा. चंद्रभागा घाट, पंढरपूर"
+                      className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-amber-500/50 bg-stone-50"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-stone-700 mb-1">मोबाईल नंबर *</label>
+                    <input
+                      type="tel"
+                      required
+                      value={contactPhone}
+                      onChange={(e) => setContactPhone(e.target.value)}
+                      placeholder="९८२२०XXXXX"
+                      className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-amber-500/50 bg-stone-50"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">अधिक वर्णन / कपडे / खूण</label>
+                  <textarea
+                    rows={3}
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="उदा. पांढरा कुर्ता आणि धोतर, डोक्यावर तुळशी माळ..."
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-amber-500/50 bg-stone-50"
+                  />
+                </div>
+
                 <button
                   type="submit"
-                  className="flex-1 bg-amber-600 hover:bg-amber-700 text-white font-bold py-2.5 rounded-xl shadow"
+                  className="w-full bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-black text-xs py-3 rounded-xl transition-all shadow-md"
                 >
-                  नोंदणी सबमिट करा
+                  नोंदणी करा (Submit Report)
                 </button>
-              </div>
-            </form>
+              </form>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </div>
   );
 };

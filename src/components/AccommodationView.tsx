@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Language, AccommodationItem, AnnachhatraItem } from '../types';
 import { getTranslation } from '../translations';
-import { BedDouble, Utensils, Phone, MapPin, CheckCircle, Shield, Wifi, Filter, Coffee } from 'lucide-react';
+import { BedDouble, Utensils, MapPin, Phone, CheckCircle, Clock, Search, ShieldCheck } from 'lucide-react';
+import { motion } from 'motion/react';
 
 interface AccommodationViewProps {
   language: Language;
@@ -16,239 +17,176 @@ export const AccommodationView: React.FC<AccommodationViewProps> = ({
   annachhatras,
   onBookBed,
 }) => {
-  const [activeTabSection, setActiveTabSection] = useState<'stays' | 'annachhatra'>('stays');
-  const [selectedFacility, setSelectedFacility] = useState<string>('all');
-  const [bookedIds, setBookedIds] = useState<string[]>([]);
-
-  const handleReserve = (acc: AccommodationItem) => {
-    if (acc.availableBeds <= 0) {
-      alert("क्षमतेपेक्षा जास्त खाटा भरलेल्या आहेत / No beds available currently");
-      return;
-    }
-    onBookBed(acc.id);
-    setBookedIds([...bookedIds, acc.id]);
-    alert(`तुमची खाट ${acc.name[language]} येथे आरक्षित झाली आहे! (Bed reserved successfully)`);
-  };
-
-  const filteredAccommodations = accommodations.filter(acc => {
-    if (selectedFacility === 'all') return true;
-    return acc.facilities.some(f => f.toLowerCase().includes(selectedFacility.toLowerCase()));
-  });
+  const [activeSubTab, setActiveSubTab] = useState<'stays' | 'meals'>('stays');
 
   return (
     <div className="space-y-6 pb-12">
-      {/* View Header with Toggle Tabs */}
-      <div className="bg-amber-900 text-white p-5 rounded-2xl shadow-md border border-amber-700 space-y-4">
-        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
-          <div>
-            <h2 className="text-xl sm:text-2xl font-bold font-serif flex items-center space-x-2">
-              <span>🏠</span>
-              <span>{getTranslation(language, 'stayHeader')}</span>
-            </h2>
-            <p className="text-xs sm:text-sm text-amber-200 mt-1">
-              वारकऱ्यांसाठी सरकारी व सामाजिक संस्थांचे विनामूल्य निवास व अन्नछत्र महाप्रसाद.
-            </p>
-          </div>
-
-          <div className="bg-amber-950/60 p-1 rounded-xl border border-amber-500/40 flex space-x-1">
-            <button
-              onClick={() => setActiveTabSection('stays')}
-              className={`px-4 py-2 text-xs sm:text-sm font-bold rounded-lg transition-all flex items-center space-x-1.5 ${
-                activeTabSection === 'stays'
-                  ? 'bg-amber-400 text-amber-950 shadow'
-                  : 'text-amber-100 hover:bg-amber-800'
-              }`}
-            >
-              <BedDouble className="w-4 h-4" />
-              <span>विनामूल्य निवास (Stays)</span>
-            </button>
-            <button
-              onClick={() => setActiveTabSection('annachhatra')}
-              className={`px-4 py-2 text-xs sm:text-sm font-bold rounded-lg transition-all flex items-center space-x-1.5 ${
-                activeTabSection === 'annachhatra'
-                  ? 'bg-amber-400 text-amber-950 shadow'
-                  : 'text-amber-100 hover:bg-amber-800'
-              }`}
-            >
-              <Utensils className="w-4 h-4" />
-              <span>अन्नछत्र भोजन (Meals)</span>
-            </button>
-          </div>
+      {/* Top Banner - Fresh Sandalwood & Emerald Accent */}
+      <div className="bg-gradient-to-r from-[#1E1B18] via-[#2A241F] to-[#141210] rounded-3xl p-6 text-white shadow-xl border border-amber-500/20 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <span className="bg-emerald-500/20 text-emerald-300 text-[10px] font-black px-2.5 py-0.5 rounded-full border border-emerald-500/30 uppercase tracking-widest">
+            विनामूल्य सेवा (FREE SEVA)
+          </span>
+          <h2 className="text-2xl sm:text-3xl font-black font-serif tracking-tight text-amber-100 mt-1">
+            {getTranslation(language, 'cardStaysTitle')}
+          </h2>
+          <p className="text-stone-300 text-xs sm:text-sm mt-1">
+            वारकऱ्यांसाठी मोफत निवास स्थानक, धर्मशाळा आणि २४ तास मोफत महाप्रसाद अन्नछत्र माहिती.
+          </p>
         </div>
 
-        {/* Facility Filter Chips for Stays */}
-        {activeTabSection === 'stays' && (
-          <div className="flex items-center space-x-2 pt-2 overflow-x-auto no-scrollbar border-t border-amber-800">
-            <span className="text-xs text-amber-300 font-bold flex items-center space-x-1 shrink-0">
-              <Filter className="w-3.5 h-3.5" />
-              <span>सुविधा:</span>
-            </span>
-            {['all', 'Wheelchair', 'Hot Water', 'Free Meals', 'Medical'].map((f) => (
-              <button
-                key={f}
-                onClick={() => setSelectedFacility(f)}
-                className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
-                  selectedFacility === f
-                    ? 'bg-amber-300 text-amber-950 font-bold'
-                    : 'bg-amber-800/80 text-amber-100 hover:bg-amber-700'
-                }`}
-              >
-                {f === 'all' ? 'सर्व सुविधा' : f}
-              </button>
-            ))}
-          </div>
-        )}
+        {/* Sub-tab switcher */}
+        <div className="bg-stone-900/90 p-1.5 rounded-2xl border border-stone-700 flex space-x-1 shrink-0">
+          <button
+            onClick={() => setActiveSubTab('stays')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 ${
+              activeSubTab === 'stays'
+                ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white shadow-sm'
+                : 'text-stone-400 hover:text-white'
+            }`}
+          >
+            <BedDouble className="w-4 h-4" />
+            <span>{language === 'mr' ? 'मोफत निवारा' : 'Free Stays'}</span>
+          </button>
+          <button
+            onClick={() => setActiveSubTab('meals')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 ${
+              activeSubTab === 'meals'
+                ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-white shadow-sm'
+                : 'text-stone-400 hover:text-white'
+            }`}
+          >
+            <Utensils className="w-4 h-4" />
+            <span>{language === 'mr' ? 'अन्नछत्र प्रसाद' : 'Food Meals'}</span>
+          </button>
+        </div>
       </div>
 
-      {/* SECTION 1: Free Accommodations List */}
-      {activeTabSection === 'stays' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {filteredAccommodations.map((acc) => {
-            const isBooked = bookedIds.includes(acc.id);
-            const occupancyPct = Math.round(((acc.totalBeds - acc.availableBeds) / acc.totalBeds) * 100);
-
+      {/* SUB-TAB 1: STAYS */}
+      {activeSubTab === 'stays' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {accommodations.map((acc) => {
+            const hasBeds = acc.availableBeds > 0;
+            const nameStr = typeof acc.name === 'string' ? acc.name : (acc.name[language] || acc.name.mr);
+            const addressStr = typeof acc.address === 'string' ? acc.address : (acc.address[language] || acc.address.mr);
             return (
-              <div
+              <motion.div
                 key={acc.id}
-                className="bg-white rounded-2xl p-5 shadow-md border border-amber-200 hover:shadow-lg transition-all flex flex-col justify-between space-y-4"
+                whileHover={{ y: -4 }}
+                className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-xl border border-stone-200/90 flex flex-col justify-between space-y-4 transition-all"
               >
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <div className="flex justify-between items-start">
-                    <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 uppercase">
-                      {acc.isFree ? 'विनामूल्य (FREE STAY)' : 'सवलत'}
+                    <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
+                      {acc.type === 'BhaktaNiwas' ? 'मोफत भक्त निवास' : 'मोफत धर्मशाळा'}
                     </span>
-                    <span className="text-xs font-bold text-amber-800 flex items-center space-x-1">
-                      <MapPin className="w-3.5 h-3.5" />
-                      <span>{acc.distanceFromTempleKm} किमी अंतरावर</span>
+                    <span className={`text-xs font-black px-2.5 py-0.5 rounded-full ${
+                      hasBeds ? 'bg-emerald-100 text-emerald-900' : 'bg-rose-100 text-rose-800'
+                    }`}>
+                      {hasBeds ? `उपलब्ध: ${acc.availableBeds} जागा` : 'पूर्ण (Full)'}
                     </span>
                   </div>
 
-                  <h3 className="text-base font-extrabold text-amber-950 font-serif">
-                    {acc.name[language]}
+                  <h3 className="text-lg font-bold text-stone-900 font-serif">
+                    {nameStr}
                   </h3>
-                  <p className="text-xs text-amber-800">
-                    📍 {acc.address[language]}
+
+                  <p className="text-xs text-stone-500 flex items-center space-x-1 font-sans">
+                    <MapPin className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+                    <span>{addressStr}</span>
                   </p>
 
-                  {/* Bed Occupancy Progress Bar */}
-                  <div className="bg-amber-50 p-3 rounded-xl border border-amber-200 space-y-1.5">
-                    <div className="flex justify-between text-xs font-bold">
-                      <span className="text-amber-900">
-                        {getTranslation(language, 'availableBeds')}: <span className="text-emerald-700 text-sm">{acc.availableBeds}</span>
-                      </span>
-                      <span className="text-amber-700">{acc.totalBeds} एकूण खाटा</span>
+                  <div className="bg-stone-50 p-3 rounded-2xl border border-stone-100 space-y-1.5 text-xs text-stone-700">
+                    <div className="font-bold text-stone-900 text-[11px] uppercase tracking-wider text-amber-900">सुविधा (Facilities):</div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {acc.facilities.map((f, i) => (
+                        <span key={i} className="bg-white px-2 py-0.5 rounded-md border border-stone-200 text-[10px] font-medium text-stone-700">
+                          ✓ {f}
+                        </span>
+                      ))}
                     </div>
-                    <div className="w-full bg-amber-200 h-2.5 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all ${
-                          occupancyPct > 80 ? 'bg-red-500' : 'bg-emerald-500'
-                        }`}
-                        style={{ width: `${occupancyPct}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Facility Badges */}
-                  <div className="flex flex-wrap gap-1.5 pt-1">
-                    {acc.facilities.map((fac, i) => (
-                      <span
-                        key={i}
-                        className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-100/80 text-amber-900 border border-amber-200"
-                      >
-                        ✓ {fac}
-                      </span>
-                    ))}
                   </div>
                 </div>
 
-                {/* Bottom Action Controls */}
-                <div className="flex gap-2 pt-2 border-t border-amber-100">
-                  <a
-                    href={`tel:${acc.contactPhone}`}
-                    className="flex-1 bg-amber-100 hover:bg-amber-200 text-amber-950 text-xs font-bold py-2.5 rounded-xl text-center transition-all flex items-center justify-center space-x-1"
-                  >
-                    <Phone className="w-3.5 h-3.5 text-amber-800" />
-                    <span>कॉल करा ({acc.contactPhone})</span>
-                  </a>
+                <div className="pt-2 border-t border-stone-100 space-y-2">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-stone-500 font-semibold">संपर्क:</span>
+                    <a href={`tel:${acc.contactPhone}`} className="font-bold text-blue-700 flex items-center space-x-1">
+                      <Phone className="w-3.5 h-3.5" />
+                      <span>{acc.contactPhone}</span>
+                    </a>
+                  </div>
 
                   <button
-                    onClick={() => handleReserve(acc)}
-                    disabled={isBooked || acc.availableBeds <= 0}
-                    className={`flex-1 text-xs font-extrabold py-2.5 rounded-xl shadow transition-all ${
-                      isBooked
-                        ? 'bg-emerald-600 text-white cursor-default'
-                        : acc.availableBeds <= 0
-                        ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
-                        : 'bg-amber-600 hover:bg-amber-700 text-white'
+                    disabled={!hasBeds}
+                    onClick={() => {
+                      onBookBed(acc.id);
+                      alert(`जागा यशस्वीपणे आरक्षित झाली! (${nameStr})`);
+                    }}
+                    className={`w-full py-3 rounded-xl font-bold text-xs transition-all flex items-center justify-center space-x-1.5 ${
+                      hasBeds
+                        ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white shadow-sm'
+                        : 'bg-stone-200 text-stone-500 cursor-not-allowed'
                     }`}
                   >
-                    {isBooked ? '✓ खाट आरक्षित झाली' : getTranslation(language, 'bookBedBtn')}
+                    <BedDouble className="w-4 h-4" />
+                    <span>{hasBeds ? getTranslation(language, 'bookBedBtn') : 'स्थान पूर्ण भरले आहे'}</span>
                   </button>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>
       )}
 
-      {/* SECTION 2: Annachhatra Free Meal Distribution */}
-      {activeTabSection === 'annachhatra' && (
-        <div className="space-y-4">
-          <div className="bg-amber-100 p-4 rounded-2xl border border-amber-300 text-xs text-amber-900 flex items-center space-x-2">
-            <Coffee className="w-5 h-5 text-amber-700 shrink-0" />
-            <p>
-              श्री विठ्ठल रुक्मिणी वारीमध्ये विविध सामाजिक व धार्मिक संस्थांतर्फे २४ तास मोफत महाप्रसाद व अन्नछत्र सुरू आहे.
-            </p>
-          </div>
+      {/* SUB-TAB 2: MEALS */}
+      {activeSubTab === 'meals' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {annachhatras.map((meal) => {
+            const orgStr = typeof meal.organizer === 'string' ? meal.organizer : (meal.organizer[language] || meal.organizer.mr);
+            const locStr = typeof meal.location === 'string' ? meal.location : (meal.location[language] || meal.location.mr);
+            const menuStr = typeof meal.menuItems === 'string' ? meal.menuItems : (meal.menuItems[language] || meal.menuItems.mr);
+            const timeStr = typeof meal.servingTimes === 'string' ? meal.servingTimes : (meal.servingTimes[language] || meal.servingTimes.mr);
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {annachhatras.map((ann) => (
-              <div
-                key={ann.id}
-                className="bg-white rounded-2xl p-5 shadow-md border border-amber-200 space-y-3"
+            return (
+              <motion.div
+                key={meal.id}
+                whileHover={{ y: -4 }}
+                className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-xl border border-stone-200/90 flex flex-col justify-between space-y-4 transition-all"
               >
-                <div className="flex items-center space-x-3 border-b border-amber-100 pb-3">
-                  <div className="w-10 h-10 rounded-xl bg-orange-100 text-orange-800 flex items-center justify-center font-bold text-xl">
-                    🍲
+                <div className="space-y-3">
+                  <div className="flex justify-between items-start">
+                    <span className="bg-amber-100 text-amber-900 border border-amber-200 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
+                      मोफत महाप्रसाद
+                    </span>
+                    <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 flex items-center space-x-1">
+                      <Clock className="w-3 h-3" />
+                      <span>{timeStr}</span>
+                    </span>
                   </div>
-                  <div>
-                    <h3 className="font-extrabold text-amber-950 text-sm font-serif">
-                      {ann.organizer[language]}
-                    </h3>
-                    <p className="text-xs text-amber-800">📍 {ann.location[language]}</p>
+
+                  <h3 className="text-lg font-bold text-stone-900 font-serif">
+                    {orgStr}
+                  </h3>
+
+                  <p className="text-xs text-stone-500 flex items-center space-x-1 font-sans">
+                    <MapPin className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+                    <span>{locStr}</span>
+                  </p>
+
+                  <div className="bg-amber-50/60 p-3 rounded-2xl border border-amber-200/80 space-y-1 text-xs text-amber-950">
+                    <div className="font-bold text-[11px] uppercase tracking-wider text-amber-900">आजचा प्रसाद मेनू:</div>
+                    <div className="font-bold text-xs">{menuStr}</div>
                   </div>
                 </div>
 
-                <div className="space-y-2 text-xs">
-                  <div className="bg-amber-50 p-2.5 rounded-xl border border-amber-200">
-                    <span className="font-bold text-amber-900 block">
-                      {getTranslation(language, 'servingTimes')}:
-                    </span>
-                    <span className="text-amber-800 font-semibold">{ann.servingTimes[language]}</span>
-                  </div>
-
-                  <div className="bg-orange-50 p-2.5 rounded-xl border border-orange-200">
-                    <span className="font-bold text-orange-950 block">
-                      {getTranslation(language, 'menuToday')}:
-                    </span>
-                    <span className="text-orange-900 font-medium">{ann.menuItems[language]}</span>
-                  </div>
-
-                  <div className="flex justify-between items-center text-xs pt-1">
-                    <span className="text-amber-800 font-medium">
-                      दैनिक भोजन क्षमता: <strong className="text-amber-950">{ann.dailyMealsCapacity.toLocaleString()} वारकरी</strong>
-                    </span>
-                    <a
-                      href={`tel:${ann.contactPhone}`}
-                      className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-[11px] px-3 py-1.5 rounded-lg shadow"
-                    >
-                      📞 संपर्क
-                    </a>
-                  </div>
+                <div className="pt-2 border-t border-stone-100 flex justify-between items-center text-xs">
+                  <span className="text-stone-500 font-semibold">क्षमता (Capacity):</span>
+                  <span className="font-bold text-stone-800">{meal.dailyMealsCapacity.toLocaleString()} व्यक्ती रोज</span>
                 </div>
-              </div>
-            ))}
-          </div>
+              </motion.div>
+            );
+          })}
         </div>
       )}
     </div>

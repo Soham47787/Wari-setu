@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Language, SOSAlert } from '../types';
 import { getTranslation } from '../translations';
-import { ShieldAlert, PhoneCall, Ambulance, ShieldCheck, MapPin, AlertTriangle, CheckCircle } from 'lucide-react';
-import { emergencyHelplines } from '../data/wariData';
+import { AlertOctagon, Phone, ShieldCheck, MapPin, HeartPulse, Stethoscope, Compass, CheckCircle, Flame } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface EmergencySOSViewProps {
   language: Language;
@@ -15,164 +15,230 @@ export const EmergencySOSView: React.FC<EmergencySOSViewProps> = ({
   onSendSOS,
   activeSosAlerts,
 }) => {
-  const [selectedCategory, setSelectedCategory] = useState<'medical' | 'lost_child' | 'water_distress' | 'police' | 'mobility'>('medical');
-  const [senderName, setSenderName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [locationName, setLocationName] = useState('चंद्रभागा स्नान घाट (Pandharpur)');
-  const [isSending, setIsSending] = useState(false);
+  const [sosCategory, setSosCategory] = useState<'medical' | 'lost_child' | 'police' | 'mobility'>('medical');
+  const [userName, setUserName] = useState('');
+  const [userPhone, setUserPhone] = useState('');
+  const [locationName, setLocationName] = useState('');
+  const [isSent, setIsSent] = useState(false);
 
-  const handleTriggerSOS = () => {
-    setIsSending(true);
+  const handleTriggerSOS = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userName.trim() || !userPhone.trim()) {
+      alert("कृपया नाव व फोन प्रविष्ट करा / Please enter name and phone");
+      return;
+    }
 
-    setTimeout(() => {
-      const newAlert: SOSAlert = {
-        id: `sos_${Date.now()}`,
-        senderName: senderName || 'वारकरी भाविक (Pilgrim)',
-        phone: phone || '९८२२०९९८८७',
-        category: selectedCategory,
-        locationName,
-        lat: 17.6775,
-        lng: 75.3239,
-        timestamp: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
-        status: 'assigned',
-        responderInfo: 'वैद्यकीय पथक २ व १०८ रुग्णवाहिका (Dispatching Team - 3 mins away)'
-      };
+    const newAlert: SOSAlert = {
+      id: `sos_${Date.now()}`,
+      senderName: userName,
+      phone: userPhone,
+      category: sosCategory,
+      locationName: locationName || 'चंद्रभागा घाट परिसर, पंढरपूर (GPS Auto-located)',
+      timestamp: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+      status: 'active'
+    };
 
-      onSendSOS(newAlert);
-      setIsSending(false);
-      alert("🚨 SOS आणीबाणी संदेश पाठवला गेला आहे! ५ मिनिटांत पथक पोहोचेल. (Emergency Team Dispatched)");
-    }, 1000);
+    onSendSOS(newAlert);
+    setIsSent(true);
+    setTimeout(() => setIsSent(false), 8000);
   };
+
+  const emergencyContacts = [
+    { name: 'पोलीस नियंत्रण कक्ष (Police Control)', phone: '100', icon: ShieldCheck, color: 'text-blue-700 bg-blue-50 border-blue-200' },
+    { name: 'रुग्णवाहिका / रुग्णालय (Ambulance)', phone: '108', icon: HeartPulse, color: 'text-rose-700 bg-rose-50 border-rose-200' },
+    { name: 'आपत्ती व्यवस्थापन (Disaster Cell)', phone: '1077', icon: Compass, color: 'text-amber-800 bg-amber-50 border-amber-200' },
+    { name: 'अग्निशामक दल (Fire Station)', phone: '101', icon: Flame, color: 'text-orange-700 bg-orange-50 border-orange-200' },
+  ];
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Huge Urgent SOS Banner */}
-      <div className="bg-gradient-to-r from-red-700 via-red-600 to-amber-700 text-white rounded-2xl p-6 shadow-xl border-4 border-red-400 space-y-4">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-red-400/40 pb-4">
-          <div>
-            <div className="flex items-center space-x-2">
-              <span className="w-3 h-3 rounded-full bg-red-300 animate-ping" />
-              <h2 className="text-xl sm:text-2xl font-extrabold font-serif tracking-tight">
-                {getTranslation(language, 'sosHeader')}
-              </h2>
-            </div>
-            <p className="text-xs sm:text-sm text-red-100 mt-1 max-w-xl">
-              {getTranslation(language, 'sosDescription')}
-            </p>
-          </div>
-
-          <div className="bg-red-950/60 p-3 rounded-xl border border-red-300/40 text-center shrink-0">
-            <span className="text-xs text-red-200 block font-bold">आणीबाणी नियंत्रण कक्ष</span>
-            <a href="tel:108" className="text-xl font-black text-amber-300 hover:underline">
-              📞 108 / 112
-            </a>
-          </div>
+      {/* Top Banner - Rose & Dark Slate Emergency Accent */}
+      <div className="bg-gradient-to-r from-stone-950 via-rose-950 to-stone-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl border border-rose-500/30 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div className="space-y-2">
+          <span className="bg-rose-600 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest flex items-center space-x-1.5 w-fit shadow-md">
+            <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+            <span>२४x७ आणीबाणी सेवा (24x7 SOS HELP)</span>
+          </span>
+          <h2 className="text-2xl sm:text-3xl font-black font-serif tracking-tight text-white">
+            {getTranslation(language, 'cardSosTitle')}
+          </h2>
+          <p className="text-stone-300 text-xs sm:text-sm max-w-xl font-sans">
+            वैद्यकीय आणीबाणी, पोलिस मदत किंवा गंभीर प्रसंगी १-टॅप थेट मदत संदेश पाठवा.
+          </p>
         </div>
 
-        {/* Big Pulse 1-Tap SOS Button */}
-        <div className="flex flex-col items-center justify-center py-4 space-y-4">
-          <button
-            onClick={handleTriggerSOS}
-            disabled={isSending}
-            className={`w-48 h-48 sm:w-56 sm:h-56 rounded-full bg-gradient-to-b from-red-500 via-red-600 to-red-800 text-white font-black text-xl sm:text-2xl border-8 border-red-300 shadow-2xl flex flex-col items-center justify-center transition-all transform hover:scale-105 active:scale-95 ${
-              isSending ? 'animate-spin' : 'animate-pulse'
-            }`}
-          >
-            <ShieldAlert className="w-16 h-16 text-amber-300 mb-2" />
-            <span>{isSending ? 'पाठवत आहे...' : 'तात्काळ SOS'}</span>
-            <span className="text-xs text-amber-200 font-semibold mt-1">1-TAP EMERGENCY</span>
-          </button>
-        </div>
-
-        {/* SOS Category Selector */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2">
-          {[
-            { id: 'medical', label: '🏥 वैद्यकीय मदत (Medical)', icon: '🚑' },
-            { id: 'police', label: '👮 पोलीस / सुरक्षा (Police)', icon: '🛡️' },
-            { id: 'lost_child', label: '👶 मूल हरवले (Lost Child)', icon: '👦' },
-            { id: 'water_distress', label: '💧 पाणी टंचाई (Water/Food)', icon: '🥤' },
-          ].map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setSelectedCategory(cat.id as any)}
-              className={`p-2.5 rounded-xl text-xs font-bold transition-all flex flex-col items-center space-y-1 ${
-                selectedCategory === cat.id
-                  ? 'bg-amber-300 text-amber-950 border-2 border-white shadow-lg font-black'
-                  : 'bg-red-900/60 text-red-100 hover:bg-red-800 border border-red-500/40'
-              }`}
-            >
-              <span className="text-xl">{cat.icon}</span>
-              <span>{cat.label}</span>
-            </button>
-          ))}
+        <div className="bg-stone-900/90 backdrop-blur-md p-4 rounded-2xl border border-rose-500/30 shrink-0 text-center space-y-1">
+          <span className="text-[10px] text-stone-400 block font-semibold uppercase tracking-wider">थेट हेल्पलाइन</span>
+          <a href="tel:108" className="text-2xl font-black text-rose-400 font-mono tracking-wider hover:underline block">
+            📞 १०८ / १००
+          </a>
         </div>
       </div>
 
-      {/* Active Dispatched Responses Tracker */}
-      {activeSosAlerts.length > 0 && (
-        <div className="bg-white rounded-2xl p-5 shadow-md border-2 border-red-300 space-y-3">
-          <h3 className="font-extrabold text-base text-red-950 flex items-center space-x-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-red-600 animate-ping" />
-            <span>सक्रिय मदत पथक पाठपुरावा (Active SOS Emergency Status)</span>
-          </h3>
+      {/* Main Grid: SOS Trigger + Helpline Contacts */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Trigger Form */}
+        <div className="lg:col-span-7 bg-white rounded-3xl p-6 shadow-sm border border-stone-200/90 space-y-5">
+          <div className="border-b border-stone-100 pb-4 flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-700 flex items-center justify-center border border-rose-200">
+              <AlertOctagon className="w-5 h-5 text-rose-600" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-stone-900 font-serif">
+                तात्काळ मदत संदेश पाठवा (Send Emergency SOS)
+              </h3>
+              <p className="text-xs text-stone-500">
+                तुमचे GPS स्थान व माहिती नियंत्रण कक्षाला त्वरित पाठवली जाईल.
+              </p>
+            </div>
+          </div>
 
-          <div className="space-y-3">
-            {activeSosAlerts.map((sos) => (
-              <div
-                key={sos.id}
-                className="p-4 rounded-xl border border-red-200 bg-red-50/50 flex flex-col sm:flex-row justify-between sm:items-center gap-3"
+          <form onSubmit={handleTriggerSOS} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-stone-700 mb-1.5">आणीबाणी प्रकार निवडा</label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {[
+                  { id: 'medical', label: '🏥 वैद्यकीय (Medical)', bg: 'hover:bg-rose-50' },
+                  { id: 'police', label: '👮 पोलिस मदत', bg: 'hover:bg-blue-50' },
+                  { id: 'lost_child', label: '👶 मुल हरवले', bg: 'hover:bg-amber-50' },
+                  { id: 'mobility', label: '♿ व्हीलचेअर / इतर', bg: 'hover:bg-stone-50' },
+                ].map((cat) => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setSosCategory(cat.id as any)}
+                    className={`py-2.5 px-2 text-xs font-bold rounded-xl border transition-all ${
+                      sosCategory === cat.id
+                        ? 'bg-rose-600 text-white border-rose-600 shadow-sm'
+                        : `bg-stone-50 text-stone-700 border-stone-200 ${cat.bg}`
+                    }`}
+                  >
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-stone-700 mb-1.5">तुमचे नाव *</label>
+                <input
+                  type="text"
+                  required
+                  value={userName}
+                  onChange={(e) => setUserName(e.target.value)}
+                  placeholder="उदा. बबन शिंदे"
+                  className="w-full px-4 py-3 text-xs rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500/50 bg-stone-50"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-stone-700 mb-1.5">मोबाईल नंबर *</label>
+                <input
+                  type="tel"
+                  required
+                  value={userPhone}
+                  onChange={(e) => setUserPhone(e.target.value)}
+                  placeholder="९८२२०XXXXX"
+                  className="w-full px-4 py-3 text-xs rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500/50 bg-stone-50"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-stone-700 mb-1.5">सध्याचे स्थान / ठिकाण</label>
+              <div className="relative">
+                <MapPin className="w-4 h-4 text-stone-400 absolute left-3.5 top-3.5" />
+                <input
+                  type="text"
+                  value={locationName}
+                  onChange={(e) => setLocationName(e.target.value)}
+                  placeholder="चंद्रभागा महाद्वार घाट जवळ (GPS स्वयंचलित...)"
+                  className="w-full pl-10 pr-4 py-3 text-xs rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-rose-500/50 bg-stone-50"
+                />
+              </div>
+            </div>
+
+            <motion.button
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.98 }}
+              type="submit"
+              className="w-full bg-gradient-to-r from-rose-600 via-red-600 to-rose-700 hover:from-rose-700 hover:to-red-800 text-white font-black text-sm py-4 rounded-2xl shadow-xl transition-all flex items-center justify-center space-x-2 border border-rose-500/40"
+            >
+              <AlertOctagon className="w-5 h-5 text-white animate-pulse" />
+              <span>तात्काळ मदत पाठवा (Send Emergency SOS)</span>
+            </motion.button>
+          </form>
+
+          {/* Alert Sent Success Banner */}
+          <AnimatePresence>
+            {isSent && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="bg-emerald-50 border border-emerald-300 p-4 rounded-2xl text-emerald-950 text-xs flex items-center space-x-3"
               >
+                <CheckCircle className="w-6 h-6 text-emerald-600 shrink-0" />
                 <div>
-                  <div className="flex items-center space-x-2">
-                    <span className="font-bold text-sm text-red-900">{sos.senderName} ({sos.phone})</span>
-                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-red-200 text-red-900 uppercase">
-                      {sos.category}
+                  <strong className="font-bold text-sm block">SOS संदेश यशस्वीपणे पाठवला!</strong>
+                  <span>पंढरपूर नियंत्रण कक्ष व जवळच्या रुग्णवाहिकेला माहिती पाठवली आहे.</span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Emergency Contacts Panel */}
+        <div className="lg:col-span-5 space-y-4">
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-stone-200/90 space-y-4">
+            <h3 className="text-base font-bold text-stone-900 font-serif border-b border-stone-100 pb-3">
+              थेट आणीबाणी दूरध्वनी (Direct Emergency Numbers)
+            </h3>
+
+            <div className="space-y-3">
+              {emergencyContacts.map((contact, i) => {
+                const Icon = contact.icon;
+                return (
+                  <div
+                    key={i}
+                    className={`p-4 rounded-2xl border flex justify-between items-center ${contact.color}`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <Icon className="w-5 h-5 shrink-0" />
+                      <span className="font-bold text-xs">{contact.name}</span>
+                    </div>
+                    <a
+                      href={`tel:${contact.phone}`}
+                      className="bg-stone-950 text-white font-mono font-black text-xs px-3.5 py-2 rounded-xl hover:bg-stone-800 transition-colors shadow"
+                    >
+                      📞 {contact.phone}
+                    </a>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Active Alerts List */}
+          {activeSosAlerts.length > 0 && (
+            <div className="bg-white rounded-3xl p-5 shadow-sm border border-stone-200 space-y-3">
+              <h4 className="font-bold text-xs text-stone-800">सक्रिय SOS संदेश ({activeSosAlerts.length})</h4>
+              <div className="space-y-2 max-h-40 overflow-y-auto">
+                {activeSosAlerts.map((a) => (
+                  <div key={a.id} className="p-3 rounded-2xl bg-rose-50 border border-rose-200 text-xs flex justify-between items-center">
+                    <div>
+                      <span className="font-bold text-rose-950 block">{a.senderName} ({a.category})</span>
+                      <span className="text-stone-600 text-[11px]">{a.locationName}</span>
+                    </div>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-600 text-white">
+                      {a.timestamp}
                     </span>
                   </div>
-                  <p className="text-xs text-red-800 mt-1">
-                    📍 {sos.locationName} | वेळ: {sos.timestamp}
-                  </p>
-                  <p className="text-xs font-bold text-emerald-800 mt-1 bg-emerald-50 p-2 rounded-lg border border-emerald-200">
-                    🚑 {sos.responderInfo}
-                  </p>
-                </div>
-
-                <div className="text-right">
-                  <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-emerald-600 text-white inline-block">
-                    ✓ पथक मार्गस्थ (Assigned)
-                  </span>
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Emergency Helplines Quick Dial Grid */}
-      <div className="bg-white rounded-2xl p-5 shadow-md border border-amber-200 space-y-4">
-        <h3 className="font-extrabold text-base text-amber-950 font-serif flex items-center space-x-2">
-          <PhoneCall className="w-5 h-5 text-amber-700" />
-          <span>{getTranslation(language, 'helplinesTitle')}</span>
-        </h3>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {emergencyHelplines.map((h, i) => (
-            <div
-              key={i}
-              className="p-4 rounded-xl border border-amber-200 bg-amber-50/50 hover:bg-amber-100 transition-all flex justify-between items-center"
-            >
-              <div>
-                <span className="text-xs font-bold text-amber-900 block">{h.name}</span>
-                <span className="text-[11px] text-amber-700">{h.role}</span>
-              </div>
-              <a
-                href={`tel:${h.phone}`}
-                className="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-2 rounded-xl shadow transition-all flex items-center space-x-1"
-              >
-                <span>📞 {h.phone}</span>
-              </a>
             </div>
-          ))}
+          )}
         </div>
       </div>
     </div>
