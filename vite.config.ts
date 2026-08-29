@@ -5,6 +5,9 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
+    // Base public path. Defaults to '/' (works for root-level hosting).
+    // Set BASE_PATH (e.g. '/Wari-setu/') when hosting under a sub-path such as GitHub Pages.
+    base: process.env.BASE_PATH || '/',
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
