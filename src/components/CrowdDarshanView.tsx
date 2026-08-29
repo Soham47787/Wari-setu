@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Language, CrowdStatus, DarshanToken, UserProfile } from '../types';
 import { getTranslation } from '../translations';
-import { Users, Clock, ShieldCheck, Ticket, Download, CheckCircle, Sparkles, AlertCircle, QrCode } from 'lucide-react';
+import { Ticket, Download, CheckCircle, AlertCircle, QrCode } from 'lucide-react';
 
 interface CrowdDarshanViewProps {
   language: Language;
@@ -83,7 +83,7 @@ export const CrowdDarshanView: React.FC<CrowdDarshanViewProps> = ({
   const [pilgrimName, setPilgrimName] = useState(user?.name || '');
   const [phone, setPhone] = useState(user?.phone || '');
   const [pilgrimCount, setPilgrimCount] = useState(2);
-  const [timeSlot, setTimeSlot] = useState('१०:०० AM - ११:३० AM');
+  const [timeSlot, setTimeSlot] = useState(language === 'en' ? '10:00 AM - 11:30 AM' : '१०:०० AM - ११:३० AM');
   const [darshanType, setDarshanType] = useState<'Mukh' | 'CharanSparsh'>('Mukh');
   const [idProofNo, setIdProofNo] = useState('');
   const [activePass, setActivePass] = useState<DarshanToken | null>(userTokens[0] || null);
@@ -98,7 +98,7 @@ export const CrowdDarshanView: React.FC<CrowdDarshanViewProps> = ({
   const handleGenerate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!pilgrimName || !phone) {
-      alert("कृपया नाव व फोन नंबर भरा (Please fill required fields)");
+      alert(language === 'mr' ? "कृपया नाव व फोन नंबर भरा" : language === 'hi' ? "कृपया नाम व फोन नंबर भरें" : "Please fill name and phone number");
       return;
     }
 
@@ -113,9 +113,11 @@ export const CrowdDarshanView: React.FC<CrowdDarshanViewProps> = ({
       phone,
       pilgrimCount: Number(pilgrimCount),
       timeSlot,
-      gateNumber: darshanType === 'Mukh' ? 'गेट १ (महाद्वार घाट)' : 'गेट ३ (दक्षिण दर्शन द्वार)',
+      gateNumber: darshanType === 'Mukh' 
+        ? (language === 'mr' ? 'गेट १ (महाद्वार घाट)' : language === 'hi' ? 'गेट १ (महाद्वार घाट)' : 'Gate 1 (Mahadwar Ghat)')
+        : (language === 'mr' ? 'गेट ३ (दक्षिण दर्शन द्वार)' : language === 'hi' ? 'गेट ३ (दक्षिण दर्शन द्वार)' : 'Gate 3 (South Darshan Gate)'),
       darshanType,
-      date: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+      date: new Date().toLocaleDateString(language === 'mr' ? 'mr-IN' : language === 'hi' ? 'hi-IN' : 'en-US', { day: '2-digit', month: 'short', year: 'numeric' }),
       qrCodeValue: `PND-VITTHAL-TOKEN-${tokenNo}-${uniqueId.slice(-6)}`,
       status: 'Confirmed',
       idProofNumber: idProofNo || 'Aadhaar-Verified'
@@ -151,27 +153,33 @@ export const CrowdDarshanView: React.FC<CrowdDarshanViewProps> = ({
             <span className="text-xs text-amber-300 font-semibold block">{getTranslation(language, 'mukhDarshan')}</span>
             <div className="flex items-baseline space-x-1.5 mt-1">
               <span className="text-2xl sm:text-3xl font-black text-white">{crowdStatus.mukhDarshanWaitMins}</span>
-              <span className="text-xs text-amber-200 font-bold">मिनिटे (Mins)</span>
+              <span className="text-xs text-amber-200 font-bold">{getTranslation(language, 'mins')}</span>
             </div>
-            <span className="text-[10px] text-emerald-400 font-extrabold mt-1 block">✓ जलद हालचाल (Fast Moving)</span>
+            <span className="text-[10px] text-emerald-400 font-extrabold mt-1 block">
+              ✓ {language === 'mr' ? 'जलद हालचाल' : language === 'hi' ? 'तीव्र गति' : 'Fast Moving Queue'}
+            </span>
           </div>
 
           <div className="bg-amber-950/70 p-4 rounded-2xl border border-amber-600/40">
             <span className="text-xs text-amber-300 font-semibold block">{getTranslation(language, 'charanSparsh')}</span>
             <div className="flex items-baseline space-x-1.5 mt-1">
               <span className="text-2xl sm:text-3xl font-black text-amber-300">{crowdStatus.charanSparshWaitHours}</span>
-              <span className="text-xs text-amber-200 font-bold">तास (Hours)</span>
+              <span className="text-xs text-amber-200 font-bold">{getTranslation(language, 'hours')}</span>
             </div>
-            <span className="text-[10px] text-amber-300 font-extrabold mt-1 block">महाद्वार घाट ते दर्शन मंडप</span>
+            <span className="text-[10px] text-amber-300 font-extrabold mt-1 block">
+              {language === 'mr' ? 'महाद्वार घाट ते दर्शन मंडप' : language === 'hi' ? 'महाद्वार घाट से दर्शन मंडप' : 'Mahadwar Ghat to Darshan Mandap'}
+            </span>
           </div>
 
           <div className="bg-amber-950/70 p-4 rounded-2xl border border-amber-600/40">
             <span className="text-xs text-amber-300 font-semibold block">{getTranslation(language, 'queueLength')}</span>
             <div className="flex items-baseline space-x-1.5 mt-1">
               <span className="text-2xl sm:text-3xl font-black text-white">{crowdStatus.queueLengthMeters}</span>
-              <span className="text-xs text-amber-200 font-bold">मीटर (Meters)</span>
+              <span className="text-xs text-amber-200 font-bold">{getTranslation(language, 'meters')}</span>
             </div>
-            <span className="text-[10px] text-amber-200 font-medium mt-1 block">१२ दर्शन मंडप शेड कार्यरत</span>
+            <span className="text-[10px] text-amber-200 font-medium mt-1 block">
+              {language === 'mr' ? 'सर्व दर्शन मंडप शेड कार्यरत' : language === 'hi' ? 'सभी दर्शन शेड कार्यरत' : 'All holding sheds active'}
+            </span>
           </div>
         </div>
 
@@ -203,7 +211,7 @@ export const CrowdDarshanView: React.FC<CrowdDarshanViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setDarshanType('Mukh')}
-                  className={`py-2 px-3 rounded-xl font-bold border transition-all text-xs ${
+                  className={`py-2 px-3 rounded-xl font-bold border transition-all text-xs cursor-pointer ${
                     darshanType === 'Mukh'
                       ? 'bg-amber-600 text-white border-amber-600 shadow-md ring-2 ring-amber-300'
                       : 'bg-amber-50 text-amber-900 border-amber-200 hover:bg-amber-100'
@@ -214,7 +222,7 @@ export const CrowdDarshanView: React.FC<CrowdDarshanViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setDarshanType('CharanSparsh')}
-                  className={`py-2 px-3 rounded-xl font-bold border transition-all text-xs ${
+                  className={`py-2 px-3 rounded-xl font-bold border transition-all text-xs cursor-pointer ${
                     darshanType === 'CharanSparsh'
                       ? 'bg-amber-600 text-white border-amber-600 shadow-md ring-2 ring-amber-300'
                       : 'bg-amber-50 text-amber-900 border-amber-200 hover:bg-amber-100'
@@ -235,7 +243,7 @@ export const CrowdDarshanView: React.FC<CrowdDarshanViewProps> = ({
                 required
                 value={pilgrimName}
                 onChange={(e) => setPilgrimName(e.target.value)}
-                placeholder="उदा. नामदेव तुकाराम शिंदे"
+                placeholder={language === 'mr' ? 'उदा. नामदेव तुकाराम शिंदे' : language === 'hi' ? 'उदा. नामदेव तुकाराम शिंदे' : 'e.g. Namdev Tukaram Shinde'}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-amber-300 bg-amber-50/40 text-amber-950 font-semibold focus:ring-2 focus:ring-amber-500 focus:outline-none"
               />
             </div>
@@ -252,7 +260,7 @@ export const CrowdDarshanView: React.FC<CrowdDarshanViewProps> = ({
                   maxLength={10}
                   value={phone}
                   onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                  placeholder="९८२२०XXXXX"
+                  placeholder="98220XXXXX"
                   className="w-full px-3 py-2.5 rounded-xl border border-amber-300 bg-amber-50/40 text-amber-950 font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none"
                 />
               </div>
@@ -268,7 +276,7 @@ export const CrowdDarshanView: React.FC<CrowdDarshanViewProps> = ({
                 >
                   {[1, 2, 3, 4, 5, 6, 8, 10].map((num) => (
                     <option key={num} value={num}>
-                      {num} {language === 'en' ? 'Pilgrims' : 'वारकरी'}
+                      {num} {language === 'en' ? 'Pilgrims' : language === 'hi' ? 'श्रद्धालु' : 'वारकरी'}
                     </option>
                   ))}
                 </select>
@@ -285,12 +293,12 @@ export const CrowdDarshanView: React.FC<CrowdDarshanViewProps> = ({
                 onChange={(e) => setTimeSlot(e.target.value)}
                 className="w-full px-3 py-2.5 rounded-xl border border-amber-300 bg-amber-50/40 font-bold text-amber-950 focus:ring-2 focus:ring-amber-500 focus:outline-none"
               >
-                <option value="सकाळी ०६:०० AM - ०८:०० AM">सकाळी ०६:०० AM - ०८:०० AM (Early Morning Slot)</option>
-                <option value="सकाळी ०८:३० AM - १०:०० AM">सकाळी ०८:३० AM - १०:०० AM (Morning Slot)</option>
-                <option value="१०:०० AM - ११:३० AM">सकाळी १०:०० AM - ११:३० AM (Standard Slot)</option>
-                <option value="दुपारी १२:३० PM - ०२:०० PM">दुपारी १२:३० PM - ०२:०० PM (Afternoon Slot)</option>
-                <option value="संध्याकाळी ०४:०० PM - ०६:०० PM">संध्याकाळी ०४:०० PM - ०६:०० PM (Evening Slot)</option>
-                <option value="रात्री ०७:३० PM - ०९:३० PM">रात्री ०७:३० PM - ०९:३० PM (Night Aarti Slot)</option>
+                <option value={language === 'en' ? '06:00 AM - 08:00 AM' : 'सकाळी ०६:०० AM - ०८:०० AM'}>06:00 AM - 08:00 AM (Early Morning Slot)</option>
+                <option value={language === 'en' ? '08:30 AM - 10:00 AM' : 'सकाळी ०८:३० AM - १०:०० AM'}>08:30 AM - 10:00 AM (Morning Slot)</option>
+                <option value={language === 'en' ? '10:00 AM - 11:30 AM' : 'सकाळी १०:०० AM - ११:३० AM'}>10:00 AM - 11:30 AM (Standard Slot)</option>
+                <option value={language === 'en' ? '12:30 PM - 02:00 PM' : 'दुपारी १२:३० PM - ०२:०० PM'}>12:30 PM - 02:00 PM (Afternoon Slot)</option>
+                <option value={language === 'en' ? '04:00 PM - 06:00 PM' : 'संध्याकाळी ०४:०० PM - ०६:०० PM'}>04:00 PM - 06:00 PM (Evening Slot)</option>
+                <option value={language === 'en' ? '07:30 PM - 09:30 PM' : 'रात्री ०७:३० PM - ०९:३० PM'}>07:30 PM - 09:30 PM (Night Aarti Slot)</option>
               </select>
             </div>
 
@@ -303,14 +311,14 @@ export const CrowdDarshanView: React.FC<CrowdDarshanViewProps> = ({
                 type="text"
                 value={idProofNo}
                 onChange={(e) => setIdProofNo(e.target.value)}
-                placeholder="आधार कार्ड / ओळखपत्र शेवटचे ४ अंक"
+                placeholder={language === 'mr' ? 'आधार कार्ड / ओळखपत्र शेवटचे ४ अंक' : language === 'hi' ? 'आधार कार्ड अंतिम ४ अंक' : 'Last 4 digits of Aadhaar / ID'}
                 className="w-full px-3.5 py-2 rounded-xl border border-amber-300 bg-amber-50/40 text-amber-950 font-medium"
               />
             </div>
 
             <button
               type="submit"
-              className="w-full py-3 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-extrabold text-sm rounded-xl shadow-lg transition-all flex items-center justify-center space-x-2"
+              className="w-full py-3 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-extrabold text-sm rounded-xl shadow-lg transition-all flex items-center justify-center space-x-2 cursor-pointer"
             >
               <span>{getTranslation(language, 'generatePassBtn')}</span>
             </button>
@@ -320,7 +328,7 @@ export const CrowdDarshanView: React.FC<CrowdDarshanViewProps> = ({
         {/* Display Verified QR Pass & Passes List (7 cols) */}
         <div className="lg:col-span-7 space-y-4">
           {activePass ? (
-            /* Single Official Temple QR Pass Card (Request #8) */
+            /* Single Official Temple QR Pass Card */
             <div className="bg-gradient-to-b from-amber-50 via-white to-amber-50 rounded-3xl p-6 shadow-2xl border-4 border-amber-500 relative overflow-hidden space-y-5">
               {/* Holographic Header Bar */}
               <div className="bg-amber-950 text-white -m-6 mb-2 p-4 border-b-4 border-amber-500 flex justify-between items-center">
@@ -371,7 +379,7 @@ export const CrowdDarshanView: React.FC<CrowdDarshanViewProps> = ({
                     <div>
                       <span className="text-amber-800 font-medium block">{getTranslation(language, 'personsCount')}</span>
                       <span className="font-bold text-amber-950 text-sm block">
-                        👥 {activePass.pilgrimCount} {language === 'en' ? 'Persons' : 'भाविक'}
+                        👥 {activePass.pilgrimCount} {language === 'en' ? 'Persons' : language === 'hi' ? 'श्रद्धालु' : 'भाविक'}
                       </span>
                     </div>
                     <div>
@@ -390,7 +398,7 @@ export const CrowdDarshanView: React.FC<CrowdDarshanViewProps> = ({
               <div className="pt-2 flex justify-end">
                 <button
                   onClick={handlePrint}
-                  className="px-5 py-2.5 bg-amber-700 hover:bg-amber-800 text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-md transition-all flex items-center space-x-2"
+                  className="px-5 py-2.5 bg-amber-700 hover:bg-amber-800 text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-md transition-all flex items-center space-x-2 cursor-pointer"
                 >
                   <Download className="w-4 h-4" />
                   <span>{getTranslation(language, 'downloadPassBtn')}</span>
@@ -429,7 +437,7 @@ export const CrowdDarshanView: React.FC<CrowdDarshanViewProps> = ({
                     <div>
                       <span className="font-mono font-bold text-amber-950 block">{pass.tokenNo}</span>
                       <span className="text-amber-800 font-medium">
-                        {pass.name} ({pass.pilgrimCount} भाविक) • {pass.timeSlot}
+                        {pass.name} ({pass.pilgrimCount} {language === 'en' ? 'Pilgrims' : language === 'hi' ? 'श्रद्धालु' : 'भाविक'}) • {pass.timeSlot}
                       </span>
                     </div>
                     <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 font-bold text-[10px]">

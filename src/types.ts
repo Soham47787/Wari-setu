@@ -9,7 +9,9 @@ export type TabType =
   | 'sos' 
   | 'abhang' 
   | 'volunteer'
-  | 'profile';
+  | 'profile'
+  | 'admin'
+  | 'services';
 
 export type UserRole = 
   | 'warkari' 
@@ -17,7 +19,8 @@ export type UserRole =
   | 'dindi_pramukh' 
   | 'trustee' 
   | 'medical_staff' 
-  | 'police_security';
+  | 'police_security'
+  | 'admin';
 
 export interface UserProfile {
   id: string;
@@ -33,8 +36,46 @@ export interface UserProfile {
   district?: string;
   dindiName?: string;
   isLoggedIn: boolean;
+  isAdmin?: boolean;
   avatarUrl?: string;
 }
+
+export interface VolunteerMember {
+  id: string;
+  name: string;
+  phone: string;
+  city: string;
+  sevaType: string;
+  assignedLocation: {
+    mr: string;
+    hi: string;
+    en: string;
+  };
+  status: 'on_duty' | 'off_duty';
+  registeredAt: string;
+  badgeNumber: string;
+  bloodGroup?: string;
+  avatarUrl?: string;
+}
+
+export interface LandmarkLocation {
+  id: string;
+  name: {
+    mr: string;
+    hi: string;
+    en: string;
+  };
+  category: string;
+  lat: number;
+  lng: number;
+  description: {
+    mr: string;
+    hi: string;
+    en: string;
+  };
+}
+
+export type TempleOpenStatus = 'Open' | 'Closed' | 'Aarti' | 'SpecialDarshan' | 'Cleaning';
 
 export interface CrowdStatus {
   lastUpdated: {
@@ -42,20 +83,43 @@ export interface CrowdStatus {
     hi: string;
     en: string;
   };
+  templeStatus: TempleOpenStatus;
+  templeStatusText?: {
+    mr: string;
+    hi: string;
+    en: string;
+  };
+  darshanDate: string;
+  templeHours: string;
   crowdLevel: 'Low' | 'Medium' | 'High' | 'Critical';
   mukhDarshanWaitMins: number;
   charanSparshWaitHours: number;
   queueLengthMeters: number;
+  nextAartiName?: {
+    mr: string;
+    hi: string;
+    en: string;
+  };
+  nextAartiTime?: string;
+  vipQueueStatus?: 'Open' | 'Restricted' | 'Closed';
+  seniorCitizenQueueStatus?: 'Open' | 'Priority Line Active' | 'Closed';
+  palkhiStageLocation?: {
+    mr: string;
+    hi: string;
+    en: string;
+  };
   activeGates: {
     mr: string;
     hi: string;
     en: string;
+    status?: 'open' | 'restricted' | 'closed';
   }[];
   noticeMessage: {
     mr: string;
     hi: string;
     en: string;
   };
+  emergencyBroadcastNotice?: string;
 }
 
 export interface DarshanToken {

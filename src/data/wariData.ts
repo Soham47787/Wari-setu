@@ -1,4 +1,4 @@
-import { CrowdStatus, MapPoint, AccommodationItem, AnnachhatraItem, LostItem, AbhangItem, UserProfile } from '../types';
+import { CrowdStatus, MapPoint, AccommodationItem, AnnachhatraItem, LostItem, AbhangItem, UserProfile, VolunteerMember, LandmarkLocation } from '../types';
 
 export const initialCrowdStatus: CrowdStatus = {
   lastUpdated: {
@@ -6,20 +6,43 @@ export const initialCrowdStatus: CrowdStatus = {
     hi: "10 मिनट पूर्व (10 mins ago)",
     en: "10 mins ago (Live Sensor Feed)"
   },
+  templeStatus: "Open",
+  templeStatusText: {
+    mr: "श्री विठ्ठल रुक्मिणी मुख्य मंदिर सुरू आहे (दर्शन खुले)",
+    hi: "श्री विट्ठल रुक्मिणी मुख्य मंदिर खुला है (दर्शन चालू)",
+    en: "Shri Vitthal Rukmini Main Temple is OPEN for Darshan"
+  },
+  darshanDate: "२९ ऑगस्ट २०२६ (आषाढी एकादशी सोहळा)",
+  templeHours: "सकाळी ०४:०० ते रात्री ११:३०",
   crowdLevel: "High",
   mukhDarshanWaitMins: 40,
   charanSparshWaitHours: 4.5,
   queueLengthMeters: 1800,
+  nextAartiName: {
+    mr: "धूपारती (सायंकाळी)",
+    hi: "धूपारती (संध्याकालीन)",
+    en: "Dhoop Aarti (Evening)"
+  },
+  nextAartiTime: "०७:०० PM",
+  vipQueueStatus: "Open",
+  seniorCitizenQueueStatus: "Priority Line Active",
+  palkhiStageLocation: {
+    mr: "वाखरी मुक्काम (पंढरपूरजवळ ५ किमी)",
+    hi: "वाखरी विश्राम (पंढरपुर निकट 5 किमी)",
+    en: "Wakhari Halt (5 km to Pandharpur)"
+  },
   activeGates: [
-    { mr: "गेट १ (महाद्वार घाट - सामान्य रांग)", hi: "गेट 1 (महाद्वार घाट - सामान्य कतार)", en: "Gate 1 (Mahadwar Ghat - General Queue)" },
-    { mr: "गेट २ (पश्चिम दर्शन मंडप)", hi: "गेट 2 (पश्चिम दर्शन मंडप)", en: "Gate 2 (West Darshan Pavilion)" },
-    { mr: "गेट ३ (दक्षिण व्हीआयपी व वृद्ध प्रवेशद्वार)", hi: "गेट 3 (दक्षिण वीआईपी व वरिष्ठ नागरिक)", en: "Gate 3 (South VIP & Seniors Entry)" }
+    { mr: "गेट १ (महाद्वार घाट - सामान्य रांग)", hi: "गेट 1 (महाद्वार घाट - सामान्य कतार)", en: "Gate 1 (Mahadwar Ghat - General Queue)", status: "open" },
+    { mr: "गेट २ (पश्चिम दर्शन मंडप)", hi: "गेट 2 (पश्चिम दर्शन मंडप)", en: "Gate 2 (West Darshan Pavilion)", status: "open" },
+    { mr: "गेट ३ (दक्षिण व्हीआयपी व वृद्ध प्रवेशद्वार)", hi: "गेट 3 (दक्षिण वीआईपी व वरिष्ठ नागरिक)", en: "Gate 3 (South VIP & Seniors Entry)", status: "open" },
+    { mr: "गेट ४ (नामदेव पायरी मार्ग)", hi: "गेट 4 (नामदेव पायरी मार्ग)", en: "Gate 4 (Namdev Steps Route)", status: "open" }
   ],
   noticeMessage: {
     mr: "श्री विठ्ठल रुक्मिणी गाभारा दर्शनासाठी मुख दर्शन रांग महाद्वार घाट येथून संथ गतीने सुरू आहे. ज्येष्ठ नागरिकांनी रांगेत मोफत ओआरएस व जलसेवेचा लाभ घ्यावा.",
     hi: "श्री विट्ठल मंदिर परिसर में मुख दर्शन पंक्ति सुचारू रूप से चल रही है। वरिष्ठ नागरिक कतार में निःशुल्क ओआरएस व जल सेवा का लाभ लें।",
     en: "Mukh Darshan queue is moving steadily from Mahadwar Ghat. Free ORS and drinking water counters are available for senior pilgrims along the route."
-  }
+  },
+  emergencyBroadcastNotice: "🚩 श्री विठ्ठल रुक्मिणी मंदिर पंढरपूर: आज मुख्य महापूजा वेळेत संपन्न झाली असून भाविकांसाठी दर्शन सुरळीत चालू आहे. गर्दीच्या ठिकाणी सेवेकऱ्यांच्या सूचनांचे पालन करावे."
 };
 
 export const palkhiStageStatus = {
@@ -1033,5 +1056,257 @@ export const emergencyHelplines = [
     nameEn: "Women & Child Safety Helpline",
     phone: "1090",
     role: "सुरक्षा कक्ष / Women Protection"
+  }
+];
+
+export const initialVolunteers: VolunteerMember[] = [
+  {
+    id: "vol_1",
+    name: "माऊली ज्ञानेश्वर कदम",
+    phone: "9822091234",
+    city: "पुणे (Pune)",
+    sevaType: "जल सेवा (Water Distribution)",
+    assignedLocation: {
+      mr: "महाद्वार घाट - जलछत्र केंद्र क्र. २",
+      hi: "महाद्वार घाट - जल सेवा केंद्र 2",
+      en: "Mahadwar Ghat - Water Booth #2"
+    },
+    status: "on_duty",
+    registeredAt: "२९ ऑगस्ट २०२६, सकाळी ८:००",
+    badgeNumber: "SEVA-PND-104",
+    bloodGroup: "O+",
+    avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
+  },
+  {
+    id: "vol_2",
+    name: "सुनील तुकाराम जगताप",
+    phone: "9823114567",
+    city: "सोलापूर (Solapur)",
+    sevaType: "गर्दी व्यवस्थापन (Crowd Queue Guide)",
+    assignedLocation: {
+      mr: "दर्शन रांग शेड क्र. ५ (पश्चिम दर्शन मंडप)",
+      hi: "दर्शन कतार शेड 5 (पश्चिम दर्शन मंडप)",
+      en: "Darshan Queue Shed #5 (West Pavilion)"
+    },
+    status: "on_duty",
+    registeredAt: "२९ ऑगस्ट २०२६, सकाळी ९:३०",
+    badgeNumber: "SEVA-PND-218",
+    bloodGroup: "B+",
+    avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80"
+  },
+  {
+    id: "vol_3",
+    name: "डॉ. प्रज्ञा अरविंद देशमुख",
+    phone: "9422019876",
+    city: "सातारा (Satara)",
+    sevaType: "वैद्यकीय मदत (Medical First-Aid)",
+    assignedLocation: {
+      mr: "चंद्रभागा वाळवंट प्राथमिक आरोग्य केंद्र",
+      hi: "चंद्रभागा तट प्राथमिक स्वास्थ्य केंद्र",
+      en: "Chandrabhaga Sands Medical Camp #1"
+    },
+    status: "on_duty",
+    registeredAt: "२९ ऑगस्ट २०२६, सकाळी ७:००",
+    badgeNumber: "SEVA-MED-05",
+    bloodGroup: "A+",
+    avatarUrl: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80"
+  },
+  {
+    id: "vol_4",
+    name: "आनंदराव विठ्ठल शिंदे",
+    phone: "9822456789",
+    city: "पंढरपूर (Pandharpur)",
+    sevaType: "अन्नछत्र सेवा (Food & Prasadam)",
+    assignedLocation: {
+      mr: "श्री संत तनपुरे महाराज मठ अन्नछत्र",
+      hi: "श्री संत तनपुरे महाराज मठ अन्नछत्र",
+      en: "Sant Tanpure Maharaj Math Annachhatra"
+    },
+    status: "on_duty",
+    registeredAt: "२९ ऑगस्ट २०२६, सकाळी ६:३०",
+    badgeNumber: "SEVA-PND-312",
+    bloodGroup: "AB+",
+    avatarUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80"
+  },
+  {
+    id: "vol_5",
+    name: "शितल योगेश भोसले",
+    phone: "9922883344",
+    city: "कोल्हापूर (Kolhapur)",
+    sevaType: "हरवलेले शोधा (Lost Child & Elder Help)",
+    assignedLocation: {
+      mr: "पोलीस नियंत्रण कक्ष शेजारी, स्टेशन रोड",
+      hi: "पुलिस नियंत्रण कक्ष के पास, स्टेशन रोड",
+      en: "Near Police Station Helpdesk, Station Rd"
+    },
+    status: "on_duty",
+    registeredAt: "२९ ऑगस्ट २०२६, सकाळी १०:००",
+    badgeNumber: "SEVA-PND-408",
+    bloodGroup: "O-",
+    avatarUrl: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80"
+  },
+  {
+    id: "vol_6",
+    name: "रामेश्वर पांडुरंग मोटे",
+    phone: "9860123987",
+    city: "बीड (Beed)",
+    sevaType: "ज्येष्ठ वारकरी सेवा (Elder Assistance & Wheelchair)",
+    assignedLocation: {
+      mr: "गेट ३ (दक्षिण व्हीआयपी व वृद्ध प्रवेशद्वार)",
+      hi: "गेट 3 (दक्षिण वीआईपी व वरिष्ठ नागरिक द्वार)",
+      en: "Gate 3 (South Elderly Pilgrim Desk)"
+    },
+    status: "off_duty",
+    registeredAt: "२९ ऑगस्ट २०२६, दुपारी २:००",
+    badgeNumber: "SEVA-PND-520",
+    bloodGroup: "B+",
+    avatarUrl: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&auto=format&fit=crop&q=80"
+  }
+];
+
+export const pandharpurLandmarks: LandmarkLocation[] = [
+  {
+    id: "temple_main",
+    name: {
+      mr: "श्री विठ्ठल रुक्मिणी मुख्य मंदिर (Vitthal Temple)",
+      hi: "श्री विट्ठल रुक्मिणी मुख्य मंदिर",
+      en: "Shri Vitthal Rukmini Main Temple"
+    },
+    category: "temple",
+    lat: 17.6775,
+    lng: 75.3239,
+    description: {
+      mr: "पंढरपूर तीर्थक्षेत्र मुख्य गाभारा व दर्शन महाद्वार",
+      hi: "पंढरपुर मुख्य मंदिर एवं दर्शन महाद्वार",
+      en: "Main Pandharpur Sanctum & Holy Gate"
+    }
+  },
+  {
+    id: "chandrabhaga_ghat",
+    name: {
+      mr: "चंद्रभागा स्नान घाट व पुंडलिक मंदिर",
+      hi: "चंद्रभागा स्नान घाट व पुंडलिक मंदिर",
+      en: "Chandrabhaga River Snan Ghat & Pundalik Temple"
+    },
+    category: "ghat",
+    lat: 17.6750,
+    lng: 75.3280,
+    description: {
+      mr: "पवित्र चंद्रभागा नदी स्नान, वाळवंट व दीपमाळ परिसर",
+      hi: "पवित्र चंद्रभागा स्नान घाट एवं दीपमाल",
+      en: "Holy Chandrabhaga River bathing ghat & sands"
+    }
+  },
+  {
+    id: "railway_station",
+    name: {
+      mr: "पंढरपूर रेल्वे स्टेशन (Railway Station)",
+      hi: "पंढरपुर रेलवे स्टेशन",
+      en: "Pandharpur Railway Station"
+    },
+    category: "transit",
+    lat: 17.6855,
+    lng: 75.3180,
+    description: {
+      mr: "विशेष वारी रेल्वे गाड्या व भाविक मदत केंद्र",
+      hi: "विशेष वारी ट्रेन एवं यात्री सहायता केंद्र",
+      en: "Special Wari pilgrim trains & assistance booth"
+    }
+  },
+  {
+    id: "bus_stand",
+    name: {
+      mr: "पंढरपूर मध्यवर्ती बस स्थानक (MSRTC Bus Stand)",
+      hi: "पंढरपुर बस स्टैंड",
+      en: "Pandharpur Central MSRTC Bus Stand"
+    },
+    category: "transit",
+    lat: 17.6820,
+    lng: 75.3250,
+    description: {
+      mr: "एसटी महामंडळ विशेष वारी बसेस, नियंत्रण कक्ष व चौकशी",
+      hi: "एसटी बस स्टैंड एवं पूछताछ केंद्र",
+      en: "State Transport Special Wari Buses Terminal"
+    }
+  },
+  {
+    id: "wakhari_ringan",
+    name: {
+      mr: "वाखरी पालखी रिंगण मैदान (Wakhari Ringan Ground)",
+      hi: "वाखरी पालकी रिंगण मैदान",
+      en: "Wakhari Palkhi Ringan & Tent City"
+    },
+    category: "ringan",
+    lat: 17.7010,
+    lng: 75.3020,
+    description: {
+      mr: "संत ज्ञानेश्वर व तुकाराम महाराज पालखी रिंगण व भव्य वारकरी मुक्काम",
+      hi: "पालकी रिंगण स्थल व महामुक्काम",
+      en: "Grand Horse Ringan Ground and Mega Pilgrim Camp"
+    }
+  },
+  {
+    id: "tanpure_math",
+    name: {
+      mr: "श्री संत तनपुरे महाराज मठ (अन्नछत्र व निवास)",
+      hi: "श्री संत तनपुरे महाराज मठ",
+      en: "Sant Tanpure Maharaj Math (Free Stay & Food)"
+    },
+    category: "stay",
+    lat: 17.6788,
+    lng: 75.3210,
+    description: {
+      mr: "२४ तास अखंड महाप्रसाद अन्नछत्र व वारकरी निवास",
+      hi: "24 घंटे अखंड महाप्रसाद एवं आवास",
+      en: "24x7 Free Food distribution & large pilgrim dorms"
+    }
+  },
+  {
+    id: "bhakta_niwas_1",
+    name: {
+      mr: "श्री विठ्ठल रुक्मिणी भक्त निवास क्र. १",
+      hi: "श्री विट्ठल भक्त निवास क्र. 1",
+      en: "Shri Vitthal Bhakta Niwas Complex #1"
+    },
+    category: "stay",
+    lat: 17.6740,
+    lng: 75.3215,
+    description: {
+      mr: "मंदिर समिती अधिकृत भक्त निवास (५०० खाटा, गरम पाणी, लिफ्ट)",
+      hi: "मंदिर समिति आधिकारिक भक्त निवास",
+      en: "Temple Trust official dormitory with modern amenities"
+    }
+  },
+  {
+    id: "isbavi_bypass",
+    name: {
+      mr: "इसबावी रिंगण व पालखी तळ (Isbavi Ringan)",
+      hi: "इसबावी रिंगण स्थल",
+      en: "Isbavi Ringan & Camping Grounds"
+    },
+    category: "ringan",
+    lat: 17.6690,
+    lng: 75.3120,
+    description: {
+      mr: "उभे व गोल रिंगण मैदान व वाहनतळ",
+      hi: "गोल रिंगण मैदान व पार्किंग",
+      en: "Traditional Ringan Ground and large parking"
+    }
+  },
+  {
+    id: "gopalpur_temple",
+    name: {
+      mr: "श्री गोपालपूर मंदिर (Gopalpur Temple)",
+      hi: "श्री गोपालपुर मंदिर",
+      en: "Shri Gopalpur Temple & Kala Grounds"
+    },
+    category: "temple",
+    lat: 17.6580,
+    lng: 75.3320,
+    description: {
+      mr: "गोपालकाला उत्सव स्थान व गायींचे खिल्लार",
+      hi: "गोपालकाला उत्सव स्थान",
+      en: "Holy Gopal-Kala closing festival ground"
+    }
   }
 ];

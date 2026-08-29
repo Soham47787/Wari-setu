@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Language, MapPoint, MapCategory } from '../types';
+import { Language, MapPoint } from '../types';
 import { getTranslation } from '../translations';
 import L from 'leaflet';
-import { Phone, Navigation, MapPin } from 'lucide-react';
+import { Phone, Navigation, MapPin, Compass, LocateFixed, Eye } from 'lucide-react';
+import { motion } from 'motion/react';
 
 interface InteractiveMapProps {
   language: Language;
@@ -22,6 +23,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
   
   const [selectedPoint, setSelectedPoint] = useState<MapPoint | null>(null);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   // Initialize Leaflet Map
   useEffect(() => {
@@ -37,7 +39,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
       // OpenStreetMap Tiles
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors | WariSeva Maps',
+        attribution: '&copy; OpenStreetMap contributors | WariSeva Multilingual Maps',
         maxZoom: 19,
       }).addTo(map);
 
@@ -72,7 +74,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
     };
   }, []);
 
-  // Update Markers on Filter Change
+  // Update Markers on Filter or Language Change
   useEffect(() => {
     if (!mapInstanceRef.current || !markersLayerRef.current) return;
 
@@ -140,16 +142,24 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
         setSelectedPoint(pt);
       });
 
+      // Tooltip in current active language
+      marker.bindTooltip(pt.title[language], {
+        permanent: false,
+        direction: 'top',
+        className: 'font-bold text-xs bg-amber-950 text-white rounded-xl px-2 py-1 border border-amber-400'
+      });
+
       markersLayerRef.current?.addLayer(marker);
     });
-  }, [mapPoints, selectedCategory]);
+  }, [mapPoints, selectedCategory, language]);
 
-  // Find User Location
+  // Find User Location via GPS
   const handleFindMyLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          setUserLocation(coords);
 
           if (mapInstanceRef.current) {
             mapInstanceRef.current.flyTo([coords.lat, coords.lng], 15);
@@ -167,12 +177,17 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
             L.marker([coords.lat, coords.lng], { icon: userIcon })
               .addTo(mapInstanceRef.current)
-              .bindPopup("<b>तुम्ही येथे आहात (Your Location)</b>")
+              .bindPopup(`<b>${language === 'mr' ? 'तुम्ही येथे आहात' : language === 'hi' ? 'आप यहां हैं' : 'You are here'}</b>`)
               .openPopup();
           }
         },
         () => {
-          alert("GPS Location access denied or unavailable. Centering at Pandharpur Temple.");
+          // Fallback location near Pandharpur
+          const coords = { lat: 17.6830, lng: 75.3200 };
+          setUserLocation(coords);
+          if (mapInstanceRef.current) {
+            mapInstanceRef.current.flyTo([coords.lat, coords.lng], 15);
+          }
         }
       );
     }
@@ -192,38 +207,70 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
     { id: 'ringan', labelKey: 'filterRingan', emoji: '🐎' },
   ];
 
+  // Helper to calculate distance from user location
+  const getPointDistanceString = (pt: MapPoint) => {
+    const origin = userLocation || { lat: 17.6775, lng: 75.3239 }; // Fallback to Vitthal temple
+    const R = 6371;
+    const dLat = ((pt.lat - origin.lat) * Math.PI) / 180;
+    const dLon = ((pt.lng - origin.lng) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((origin.lat * Math.PI) / 180) *
+        Math.cos((pt.lat * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const d = R * c;
+
+    if (d < 1) {
+      return `${Math.round(d * 1000)} ${language === 'mr' ? 'मीटर' : language === 'hi' ? 'मीटर' : 'meters'}`;
+    }
+    return `${d.toFixed(1)} ${language === 'mr' ? 'किमी' : language === 'hi' ? 'किमी' : 'km'}`;
+  };
+
   return (
-    <div className="space-y-4 pb-12">
+    <motion.div 
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-4 pb-12"
+    >
       {/* Map Header */}
-      <div className="bg-gradient-to-r from-amber-900 via-amber-800 to-amber-950 text-white p-4 sm:p-5 rounded-3xl shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-3 border border-amber-700">
+      <div className="bg-gradient-to-r from-amber-800 via-amber-900 to-stone-900 text-white p-5 rounded-3xl shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-3 border-2 border-amber-400">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold font-serif flex items-center space-x-2">
+          <div className="flex items-center space-x-2">
+            <span className="bg-amber-300 text-amber-950 font-black text-xs px-3 py-0.5 rounded-full uppercase">
+              🌐 {language === 'mr' ? 'त्रैभाषिक नकाशा' : language === 'hi' ? 'त्रिभाषी मानचित्र' : 'Multilingual Live Map'}
+            </span>
+          </div>
+          <h2 className="text-xl sm:text-2xl font-bold font-serif flex items-center space-x-2 mt-1">
             <span>🗺️</span>
             <span>{getTranslation(language, 'mapHeader')}</span>
           </h2>
-          <p className="text-xs sm:text-sm text-amber-200 mt-0.5">
+          <p className="text-xs sm:text-sm text-amber-200/90 mt-0.5">
             {getTranslation(language, 'mapSubheader')}
           </p>
         </div>
 
         <button
           onClick={handleFindMyLocation}
-          className="bg-amber-400 hover:bg-amber-300 text-amber-950 font-black text-xs sm:text-sm px-4 py-2.5 rounded-2xl transition-all shadow-md flex items-center space-x-1.5 shrink-0"
+          className="bg-amber-400 hover:bg-amber-300 text-amber-950 font-black text-xs sm:text-sm px-5 py-2.5 rounded-2xl transition-all shadow-md flex items-center space-x-1.5 shrink-0 cursor-pointer"
         >
+          <LocateFixed className="w-4 h-4 text-amber-950" />
           <span>{getTranslation(language, 'myLocationBtn')}</span>
         </button>
       </div>
 
-      {/* Category Filter Chips Bar (Request #4) */}
+      {/* Category Filter Chips Bar */}
       <div className="flex items-center space-x-2 overflow-x-auto pb-2 no-scrollbar">
         {categories.map((cat) => (
           <button
             key={cat.id}
             onClick={() => onSelectCategory(cat.id)}
-            className={`px-3.5 py-2 rounded-2xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex items-center space-x-1.5 ${
+            className={`px-4 py-2 rounded-2xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex items-center space-x-1.5 cursor-pointer ${
               selectedCategory === cat.id
-                ? 'bg-amber-600 text-white shadow-md ring-2 ring-amber-300'
-                : 'bg-white text-amber-900 border border-amber-200 hover:bg-amber-100'
+                ? 'bg-amber-700 text-white shadow-lg ring-2 ring-amber-300'
+                : 'bg-white text-amber-950 border border-amber-200 hover:bg-amber-100'
             }`}
           >
             <span>{cat.emoji}</span>
@@ -241,7 +288,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
           <div className="absolute bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 bg-white/95 backdrop-blur-md p-5 rounded-3xl shadow-2xl border-2 border-amber-400 z-20 animate-fade-in space-y-3">
             <div className="flex justify-between items-start">
               <div>
-                <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 uppercase">
+                <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 uppercase">
                   {selectedPoint.category}
                 </span>
                 <h4 className="font-bold text-sm sm:text-base text-amber-950 mt-1 font-serif">
@@ -250,7 +297,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
               </div>
               <button
                 onClick={() => setSelectedPoint(null)}
-                className="w-7 h-7 rounded-full bg-amber-100 text-amber-900 hover:bg-amber-200 flex items-center justify-center font-bold text-sm"
+                className="w-7 h-7 rounded-full bg-amber-100 text-amber-900 hover:bg-amber-200 flex items-center justify-center font-bold text-sm cursor-pointer"
               >
                 ✕
               </button>
@@ -260,6 +307,14 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
               {selectedPoint.description[language]}
             </p>
 
+            <div className="flex items-center justify-between text-xs bg-amber-50 p-2.5 rounded-xl border border-amber-200">
+              <span className="font-bold text-amber-950 flex items-center space-x-1">
+                <Compass className="w-3.5 h-3.5 text-amber-700 inline" />
+                <span>{language === 'mr' ? 'अंदाजे अंतर:' : language === 'hi' ? 'अनुमानित दूरी:' : 'Estimated Distance:'}</span>
+              </span>
+              <span className="font-extrabold text-amber-900">{getPointDistanceString(selectedPoint)}</span>
+            </div>
+
             {selectedPoint.address && (
               <p className="text-[11px] text-amber-800 font-medium">
                 📍 {selectedPoint.address[language]}
@@ -267,9 +322,9 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
             )}
 
             {selectedPoint.occupancyOrStatus && (
-              <div className="text-xs font-bold text-amber-900 bg-amber-50 p-2 rounded-xl border border-amber-200 flex justify-between">
+              <div className="text-xs font-bold text-amber-900 bg-emerald-50 p-2 rounded-xl border border-emerald-200 flex justify-between">
                 <span>{getTranslation(language, 'statusCapacity')}:</span>
-                <span className="text-emerald-700">{selectedPoint.occupancyOrStatus[language]}</span>
+                <span className="text-emerald-800">{selectedPoint.occupancyOrStatus[language]}</span>
               </div>
             )}
 
@@ -294,7 +349,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                 href={`https://www.google.com/maps/dir/?api=1&destination=${selectedPoint.lat},${selectedPoint.lng}`}
                 target="_blank"
                 rel="noreferrer"
-                className="flex-1 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold py-2.5 rounded-xl text-center shadow transition-all flex items-center justify-center space-x-1"
+                className="flex-1 bg-amber-700 hover:bg-amber-800 text-white text-xs font-bold py-2.5 rounded-xl text-center shadow transition-all flex items-center justify-center space-x-1"
               >
                 <Navigation className="w-3.5 h-3.5" />
                 <span>{getTranslation(language, 'navigateBtn')}</span>
@@ -303,6 +358,6 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 };

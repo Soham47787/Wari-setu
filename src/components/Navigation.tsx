@@ -1,18 +1,20 @@
 import React from 'react';
 import { Language, TabType } from '../types';
 import { getTranslation } from '../translations';
-import { Home, Users, Map, BedDouble, Search, AlertOctagon, Music, HandHeart, UserCheck } from 'lucide-react';
+import { Home, Users, Map, BedDouble, Search, AlertOctagon, Music, HandHeart, UserCheck, ShieldCheck, Compass } from 'lucide-react';
 
 interface NavigationProps {
   activeTab: TabType;
   onSelectTab: (tab: TabType) => void;
   language: Language;
+  isAdmin?: boolean;
 }
 
 export const Navigation: React.FC<NavigationProps> = ({
   activeTab,
   onSelectTab,
   language,
+  isAdmin = false,
 }) => {
   const tabs = [
     {
@@ -26,6 +28,12 @@ export const Navigation: React.FC<NavigationProps> = ({
       labelKey: 'navCrowd' as const,
       icon: Users,
       badge: 'LIVE',
+    },
+    {
+      id: 'services' as TabType,
+      labelKey: 'navServices' as const,
+      icon: Compass,
+      badge: 'NEW',
     },
     {
       id: 'map' as TabType,
@@ -46,6 +54,12 @@ export const Navigation: React.FC<NavigationProps> = ({
       badge: null,
     },
     {
+      id: 'volunteer' as TabType,
+      labelKey: 'navVolunteer' as const,
+      icon: HandHeart,
+      badge: null,
+    },
+    {
       id: 'sos' as TabType,
       labelKey: 'navSos' as const,
       icon: AlertOctagon,
@@ -59,10 +73,10 @@ export const Navigation: React.FC<NavigationProps> = ({
       badge: null,
     },
     {
-      id: 'volunteer' as TabType,
-      labelKey: 'navVolunteer' as const,
-      icon: HandHeart,
-      badge: null,
+      id: 'admin' as TabType,
+      labelKey: 'navAdmin' as const,
+      icon: ShieldCheck,
+      badge: isAdmin ? 'ADMIN' : 'LOCK',
     },
     {
       id: 'profile' as TabType,
@@ -83,7 +97,7 @@ export const Navigation: React.FC<NavigationProps> = ({
             <button
               key={tab.id}
               onClick={() => onSelectTab(tab.id)}
-              className={`relative px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center space-x-2 whitespace-nowrap ${
+              className={`relative px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center space-x-2 whitespace-nowrap cursor-pointer ${
                 tab.isEmergency && !isActive
                   ? 'bg-red-900/60 text-red-200 border border-red-500/50 hover:bg-red-800/80'
                   : isActive
@@ -99,6 +113,8 @@ export const Navigation: React.FC<NavigationProps> = ({
                     ? 'bg-red-600 text-white animate-pulse'
                     : isActive
                     ? 'bg-amber-700 text-white'
+                    : tab.badge === 'ADMIN'
+                    ? 'bg-emerald-600 text-white'
                     : 'bg-amber-800 text-amber-200'
                 }`}>
                   {tab.badge}
@@ -111,3 +127,4 @@ export const Navigation: React.FC<NavigationProps> = ({
     </nav>
   );
 };
+
