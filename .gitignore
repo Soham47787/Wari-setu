@@ -6,3 +6,11 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Android build artifacts (keep the repo free of large binaries/keys)
+android/.build/
+android/WariSeva.apk
+android/wariseva-release.keystore
+*.apk
+*.keystore
+*.jks

@@ -5,6 +5,19 @@ runtime — all data is in-browser). It can be deployed almost anywhere that can
 static files. A tiny Node/Express server (`server.js`) is included so it can also run
 on any Node hosting platform.
 
+## Android APK
+
+A native Android app (WebView wrapper around the bundled web app) lives in
+[`android/`](android/). Build the installable APK with:
+
+```bash
+bash android/build-apk.sh
+```
+
+It produces `android/WariSeva.apk` (package `com.warisetu.app`, minSdk 21,
+targetSdk 34) plus the release keystore. No Android SDK or Gradle is required —
+see [`android/README.md`](android/README.md) for the full toolchain notes.
+
 ## 1. Live Preview (this workspace)
 
 The app is already built and served in this environment:
