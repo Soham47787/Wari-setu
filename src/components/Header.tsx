@@ -1,140 +1,113 @@
-import React, { useState } from 'react';
-import { Language, TabType } from '../types';
+import React from 'react';
+import { Language, UserProfile } from '../types';
 import { getTranslation } from '../translations';
-import { Volume2, VolumeX, Type, ShieldAlert, PhoneCall, Sparkles, Compass } from 'lucide-react';
-import { motion } from 'motion/react';
+import { Globe, Volume2, ShieldAlert, User, LogIn } from 'lucide-react';
 
 interface HeaderProps {
   language: Language;
   onLanguageChange: (lang: Language) => void;
-  isLargeText: boolean;
-  onToggleTextSize: () => void;
-  activeTab: TabType;
-  onSelectTab: (tab: TabType) => void;
-  onOpenVoiceAssist: () => void;
+  user: UserProfile | null;
+  onOpenAuth: () => void;
+  onTriggerSOS: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   language,
   onLanguageChange,
-  isLargeText,
-  onToggleTextSize,
-  activeTab,
-  onSelectTab,
-  onOpenVoiceAssist,
+  user,
+  onOpenAuth,
+  onTriggerSOS,
 }) => {
   return (
-    <header className="sticky top-0 z-50 bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 text-white shadow-xl border-b border-amber-300/30">
-      {/* Top Hotline Strip - Deep Sandalwood Maroon */}
-      <div className="bg-[#6B21A8] sm:bg-[#78350F] px-4 py-1.5 text-xs text-amber-100 flex flex-wrap justify-between items-center border-b border-amber-400/20">
-        <div className="flex items-center space-x-2 font-medium tracking-wide">
-          <span className="inline-block w-2 h-2 rounded-full bg-emerald-300 animate-pulse" />
-          <span className="font-extrabold text-amber-200">{getTranslation(language, 'welcomeGreeting')}</span>
-          <span className="hidden sm:inline text-amber-100/80">| पंढरपूर श्री विठ्ठल रुक्मिणी क्षेत्र</span>
+    <header className="bg-amber-950 text-amber-50 border-b border-amber-800/80 sticky top-0 z-50 shadow-lg">
+      {/* Top Notification Live Ticker */}
+      <div className="bg-amber-900/90 text-amber-200 text-[11px] sm:text-xs py-1 px-3 border-b border-amber-800/60 flex items-center justify-between overflow-hidden">
+        <div className="flex items-center space-x-2 truncate">
+          <span className="bg-red-600 text-white text-[10px] font-extrabold px-1.5 py-0.2 rounded-full uppercase animate-pulse shrink-0">
+            Live
+          </span>
+          <span className="truncate">
+            🚩 {getTranslation(language, 'palkhiStatusHeader')}: वाखरी मुक्काम (पंढरपूर ५ किमी) • {getTranslation(language, 'templeQueueLive')}
+          </span>
         </div>
-
-        <div className="flex items-center space-x-4 text-xs font-bold">
-          <a href="tel:108" className="hover:text-white flex items-center space-x-1.5 transition-colors bg-rose-900/60 px-2 py-0.5 rounded-lg border border-rose-400/40">
-            <PhoneCall className="w-3.5 h-3.5 text-rose-300" />
-            <span className="text-white">१०८ रुग्णवाहिका</span>
-          </a>
-          <span className="text-amber-300/40">•</span>
-          <a href="tel:112" className="hover:text-white flex items-center space-x-1.5 transition-colors text-amber-100">
-            <span>११२ पोलीस मदत</span>
-          </a>
-        </div>
+        <span className="hidden md:inline text-amber-300 font-semibold shrink-0">
+          🚩 राम कृष्ण हरी!
+        </span>
       </div>
 
-      {/* Main Bar */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
-        {/* Brand Logo & Name */}
-        <motion.div 
-          onClick={() => onSelectTab('home')}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="flex items-center space-x-3 cursor-pointer group"
-        >
-          <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-amber-100 text-amber-950 p-2 flex items-center justify-center shadow-md border-2 border-amber-200 font-serif font-black text-2xl">
-            🛕
+      {/* Main Navigation Bar */}
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2 sm:py-3 flex justify-between items-center gap-2">
+        {/* Brand & Logo */}
+        <div className="flex items-center space-x-2.5 sm:space-x-3 cursor-pointer">
+          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center shadow-md border border-amber-300/40 shrink-0">
+            <span className="text-xl sm:text-2xl font-black text-white">🚩</span>
           </div>
           <div>
             <div className="flex items-center space-x-2">
-              <h1 className="text-xl sm:text-2xl font-black font-serif tracking-tight text-white drop-shadow">
+              <h1 className="font-extrabold text-base sm:text-xl text-amber-100 font-serif tracking-tight">
                 {getTranslation(language, 'appName')}
               </h1>
-              <span className="bg-amber-100 text-amber-950 text-[10px] sm:text-xs font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm border border-amber-300">
-                सेवा
+              <span className="hidden sm:inline-block px-2 py-0.5 text-[10px] font-bold rounded-full bg-amber-800 text-amber-200 border border-amber-700">
+                Official Wari
               </span>
             </div>
-            <p className="text-xs text-amber-100/90 hidden sm:block font-sans font-medium">
+            <p className="text-[10px] sm:text-xs text-amber-300/90 font-medium truncate max-w-[200px] sm:max-w-md">
               {getTranslation(language, 'tagline')}
             </p>
           </div>
-        </motion.div>
+        </div>
 
-        {/* Action Toolbar */}
-        <div className="flex items-center flex-wrap gap-2 sm:gap-3">
-          {/* Language Selector Pills */}
-          <div className="bg-amber-950/40 p-1 rounded-xl border border-amber-300/30 flex items-center space-x-1 backdrop-blur-md">
-            {(['mr', 'hi', 'en'] as Language[]).map((lang) => {
-              const label = lang === 'mr' ? 'मराठी' : lang === 'hi' ? 'हिंदी' : 'ENG';
-              const isSelected = language === lang;
-              return (
-                <button
-                  key={lang}
-                  onClick={() => onLanguageChange(lang)}
-                  className={`relative px-2.5 py-1 text-xs sm:text-sm font-bold rounded-lg transition-all duration-200 ${
-                    isSelected
-                      ? 'bg-amber-100 text-amber-950 shadow-md border border-amber-300'
-                      : 'text-amber-100 hover:text-white hover:bg-amber-800/40'
-                  }`}
-                >
-                  {label}
-                </button>
-              );
-            })}
+        {/* Action Controls */}
+        <div className="flex items-center space-x-1.5 sm:space-x-2.5">
+          {/* Language Selector */}
+          <div className="relative flex items-center bg-amber-900/80 rounded-xl p-0.5 sm:p-1 border border-amber-700/80">
+            <Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-300 ml-1 mr-0.5 shrink-0 hidden xs:inline" />
+            <select
+              value={language}
+              onChange={(e) => onLanguageChange(e.target.value as Language)}
+              aria-label={getTranslation(language, 'langTitle')}
+              className="bg-transparent text-amber-100 text-xs sm:text-sm font-bold pr-1 pl-1 py-1 focus:outline-none cursor-pointer rounded-lg hover:text-white"
+            >
+              <option value="mr" className="bg-amber-950 text-white font-medium">मराठी (MR)</option>
+              <option value="hi" className="bg-amber-950 text-white font-medium">हिंदी (HI)</option>
+              <option value="en" className="bg-amber-950 text-white font-medium">English (EN)</option>
+            </select>
           </div>
 
-          {/* Text Size Scale Toggle */}
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={onToggleTextSize}
-            title="Toggle Text Size for Easy Reading"
-            className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center space-x-1.5 transition-all ${
-              isLargeText
-                ? 'bg-amber-100 text-amber-950 border-white font-bold shadow'
-                : 'bg-amber-950/30 text-amber-100 border-amber-300/30 hover:bg-amber-900/40'
+          {/* User Auth Profile Button */}
+          <button
+            onClick={onOpenAuth}
+            className={`px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold transition-all shadow flex items-center space-x-1.5 border ${
+              user?.isLoggedIn
+                ? 'bg-amber-100 text-amber-950 border-amber-300 hover:bg-white'
+                : 'bg-amber-600 hover:bg-amber-500 text-white border-amber-400'
             }`}
           >
-            <Type className="w-4 h-4 text-amber-200" />
-            <span className="hidden md:inline">
-              {isLargeText ? getTranslation(language, 'textSizeNormal') : getTranslation(language, 'textSizeLarge')}
-            </span>
-          </motion.button>
+            {user?.isLoggedIn ? (
+              <>
+                <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-800 shrink-0" />
+                <span className="max-w-[80px] sm:max-w-[120px] truncate font-extrabold">{user.name.split(' ')[0]}</span>
+                <span className="text-[10px] px-1.5 py-0.2 bg-red-600 text-white font-black rounded-full hidden md:inline">
+                  {user.bloodGroup}
+                </span>
+              </>
+            ) : (
+              <>
+                <LogIn className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                <span>{getTranslation(language, 'loginBtn')}</span>
+              </>
+            )}
+          </button>
 
-          {/* Voice Assist Button */}
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={onOpenVoiceAssist}
-            title="Open Interactive Voice Help Assistant"
-            className="bg-amber-100 text-amber-950 font-extrabold text-xs sm:text-sm px-3.5 py-1.5 rounded-xl border border-amber-300 shadow-md flex items-center space-x-1.5 hover:bg-white transition-all"
+          {/* 1-Tap SOS Emergency Quick Button */}
+          <button
+            onClick={onTriggerSOS}
+            title={getTranslation(language, 'emergencySosBtn')}
+            className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-extrabold text-xs sm:text-sm px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl transition-all shadow-md flex items-center space-x-1 border border-red-400 animate-pulse shrink-0"
           >
-            <Volume2 className="w-4 h-4 text-amber-800 animate-pulse" />
-            <span>{getTranslation(language, 'voiceAssist')}</span>
-          </motion.button>
-
-          {/* 1-Tap SOS Quick Action */}
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => onSelectTab('sos')}
-            className="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-extrabold text-xs sm:text-sm px-3.5 py-1.5 rounded-xl border border-red-300 shadow-md shadow-red-900/30 flex items-center space-x-1.5"
-          >
-            <ShieldAlert className="w-4 h-4 text-white" />
-            <span>SOS</span>
-          </motion.button>
+            <ShieldAlert className="w-4 h-4 text-amber-200" />
+            <span className="hidden md:inline">SOS</span>
+          </button>
         </div>
       </div>
     </header>

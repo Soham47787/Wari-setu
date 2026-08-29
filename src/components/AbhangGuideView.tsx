@@ -1,236 +1,252 @@
 import React, { useState } from 'react';
-import { Language } from '../types';
+import { Language, AbhangItem } from '../types';
 import { getTranslation } from '../translations';
 import { sampleAbhangs } from '../data/wariData';
-import { Music, Play, Pause, Heart, ShieldAlert, Sparkles, Volume2, BookOpen, Stethoscope, CheckCircle2 } from 'lucide-react';
-import { motion } from 'motion/react';
+import {
+  Youtube,
+  ExternalLink,
+  Play,
+  Heart,
+  HeartPulse,
+  CheckCircle2,
+  Search,
+  Music,
+  Sparkles,
+  BookOpen,
+  Filter
+} from 'lucide-react';
 
 interface AbhangGuideViewProps {
   language: Language;
 }
 
-const healthTipsData = [
-  {
-    id: 'tip_1',
-    icon: '🦶',
-    titleMr: 'पायांच्या फोडांची काळजी (Foot Blisters Care)',
-    titleEn: 'Foot Blisters & Walking Care',
-    descMr: 'दीर्घ चालण्यामुळे पायाला फोड आल्यास स्वच्छ पाण्याने धुवून हळद-खोबरेल तेल लावा. सर्व वैद्यकीय छावण्यांमध्ये मोफत मलमपट्टी उपलब्ध आहे.',
-    descEn: 'For foot blisters, clean with safe water and apply antiseptic ointment or coconut oil. Free dressing available at all medical camps.'
-  },
-  {
-    id: 'tip_2',
-    icon: '💧',
-    titleMr: 'जलसंजीवन व ओआरएस (ORS & Hydration)',
-    titleEn: 'Hydration & Sunstroke Protection',
-    descMr: 'उन्हात चालताना दर तासाला किमान २५० मि.ली. पाणी किंवा ओआरएस द्रावण प्या. उन्हाचा त्रास टाळण्यासाठी डोक्यावर कापड ठेवा.',
-    descEn: 'Drink at least 250ml water or ORS every hour while walking in heat. Keep head covered with cloth or cap.'
-  },
-  {
-    id: 'tip_3',
-    icon: '🥗',
-    titleMr: 'आहार व पचन आरोग्य (Healthy Meals & Hygiene)',
-    titleEn: 'Safe Food & Hygiene',
-    descMr: 'फक्त अधिकृत अन्नछत्रातील गरम व ताजे अन्न ग्रहण करा. उघड्यावरील शिळे पदार्थ खाणे टाळा.',
-    descEn: 'Eat fresh hot meals at recognized Annachhatra camps. Avoid open or stale roadside food items.'
-  }
-];
-
 export const AbhangGuideView: React.FC<AbhangGuideViewProps> = ({ language }) => {
-  const [activeAbhangId, setActiveAbhangId] = useState<string | null>(sampleAbhangs[0]?.id || null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [guideCategory, setGuideCategory] = useState<'abhang' | 'health'>('abhang');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedSaint, setSelectedSaint] = useState<string>('all');
+  const [expandedAbhangId, setExpandedAbhangId] = useState<string | null>(sampleAbhangs[0].id);
 
-  const currentAbhang = sampleAbhangs.find(a => a.id === activeAbhangId) || sampleAbhangs[0];
+  // Filter Abhangs
+  const filteredAbhangs = sampleAbhangs.filter((abhang) => {
+    const titleMatch = abhang.title[language].toLowerCase().includes(searchQuery.toLowerCase()) ||
+                       abhang.saint[language].toLowerCase().includes(searchQuery.toLowerCase()) ||
+                       abhang.singer[language].toLowerCase().includes(searchQuery.toLowerCase()) ||
+                       abhang.lyrics[language].toLowerCase().includes(searchQuery.toLowerCase());
+    const saintMatch = selectedSaint === 'all' || abhang.saint[language].includes(selectedSaint);
+    return titleMatch && saintMatch;
+  });
 
-  const togglePlay = (id: string) => {
-    if (activeAbhangId === id) {
-      setIsPlaying(!isPlaying);
-    } else {
-      setActiveAbhangId(id);
-      setIsPlaying(true);
-    }
-  };
+  const saintsList = [
+    { id: 'all', label: 'सर्व संत (All Saints)' },
+    { id: 'तुकाराम', label: 'संत तुकाराम महाराज' },
+    { id: 'ज्ञानेश्वर', label: 'संत ज्ञानेश्वर महाराज' },
+    { id: 'एकनाथ', label: 'संत एकनाथ महाराज' },
+    { id: 'नामदेव', label: 'संत नामदेव महाराज' },
+    { id: 'सोयराबाई', label: 'संत सोयराबाई' },
+  ];
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Top Banner - Deep Slate & Warm Amber Accent */}
-      <div className="bg-gradient-to-r from-[#1E1B18] via-[#2A241F] to-[#141210] rounded-3xl p-6 text-white shadow-xl border border-amber-500/20 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      {/* Devotional Banner */}
+      <div className="bg-gradient-to-r from-amber-900 via-orange-950 to-amber-900 text-white p-5 sm:p-6 rounded-3xl shadow-xl border-2 border-amber-500/60 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <span className="bg-purple-500/20 text-purple-300 text-[10px] font-black px-2.5 py-0.5 rounded-full border border-purple-500/30 uppercase tracking-widest">
-            अध्यात्म व आरोग्य (SPIRITUAL & HEALTH)
-          </span>
-          <h2 className="text-2xl sm:text-3xl font-black font-serif tracking-tight text-amber-100 mt-1">
-            {getTranslation(language, 'abhangHeader')}
-          </h2>
-          <p className="text-stone-300 text-xs sm:text-sm mt-1">
-            संत तुकाराम, ज्ञानेश्वर महाराजांचे प्रसिद्ध अभंग आणि पायपीट वारकऱ्यांसाठी आरोग्य मार्गदर्शक.
+          <div className="flex items-center space-x-2.5">
+            <div className="w-10 h-10 rounded-2xl bg-red-600 flex items-center justify-center shadow">
+              <Youtube className="w-6 h-6 text-white fill-white" />
+            </div>
+            <h2 className="text-xl sm:text-2xl font-bold font-serif">
+              {getTranslation(language, 'abhangHeader')}
+            </h2>
+          </div>
+          <p className="text-xs sm:text-sm text-amber-200 mt-1 max-w-2xl">
+            {getTranslation(language, 'abhangSubheader')}
           </p>
         </div>
 
-        {/* Sub-tab Switcher */}
-        <div className="bg-stone-900/90 p-1.5 rounded-2xl border border-stone-700 flex space-x-1 shrink-0">
-          <button
-            onClick={() => setGuideCategory('abhang')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 ${
-              guideCategory === 'abhang'
-                ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-white shadow-sm'
-                : 'text-stone-400 hover:text-white'
-            }`}
-          >
-            <Music className="w-4 h-4" />
-            <span>अभंग व भजने</span>
-          </button>
-          <button
-            onClick={() => setGuideCategory('health')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 ${
-              guideCategory === 'health'
-                ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white shadow-sm'
-                : 'text-stone-400 hover:text-white'
-            }`}
-          >
-            <Stethoscope className="w-4 h-4" />
-            <span>आरोग्य मार्गदर्शक</span>
-          </button>
+        <div className="bg-red-950/90 border border-red-500/60 px-4 py-2 rounded-2xl text-red-200 text-xs font-bold flex items-center space-x-2 shrink-0 shadow">
+          <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+          <span>अधिकृत YouTube व्हिडिओ लिंक्स (Working Video Links)</span>
         </div>
       </div>
 
-      {/* ABHANG AUDIO PLAYER & LYRICS */}
-      {guideCategory === 'abhang' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Active Player Card */}
-          <div className="lg:col-span-5 space-y-4">
-            <div className="bg-gradient-to-br from-[#1C1815] via-[#2A241F] to-[#141210] rounded-3xl p-6 text-white shadow-xl border border-amber-500/30 space-y-5">
-              <div className="flex justify-between items-center border-b border-stone-800 pb-3">
-                <span className="text-xs text-amber-400 font-bold flex items-center space-x-1">
-                  <Volume2 className="w-4 h-4" />
-                  <span>अभंग संगीत प्लेयर</span>
-                </span>
-                <span className="bg-amber-500/20 text-amber-300 text-[10px] font-bold px-2 py-0.5 rounded border border-amber-500/30">
-                  {currentAbhang.saint}
-                </span>
-              </div>
-
-              <div className="text-center py-4 space-y-2">
-                <div className="w-20 h-20 bg-gradient-to-tr from-amber-500 to-amber-400 text-stone-950 rounded-full flex items-center justify-center text-3xl mx-auto shadow-lg">
-                  🪕
-                </div>
-                <h3 className="text-xl font-bold font-serif text-amber-100">
-                  {currentAbhang.title}
-                </h3>
-                <p className="text-xs text-stone-300 font-sans">
-                  {currentAbhang.saint}
-                </p>
-              </div>
-
-              {/* Player Progress Bar Simulation */}
-              <div className="space-y-1.5">
-                <div className="w-full bg-stone-800 h-2 rounded-full overflow-hidden">
-                  <div className={`bg-gradient-to-r from-amber-500 to-amber-400 h-full transition-all duration-300 ${isPlaying ? 'w-2/3' : 'w-0'}`} />
-                </div>
-                <div className="flex justify-between text-[10px] text-stone-400 font-mono">
-                  <span>{isPlaying ? '01:45' : '00:00'}</span>
-                  <span>03:30</span>
-                </div>
-              </div>
-
-              {/* Controls */}
-              <div className="flex items-center justify-center space-x-4 pt-2">
-                <button
-                  onClick={() => togglePlay(currentAbhang.id)}
-                  className="w-14 h-14 bg-gradient-to-tr from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-stone-950 rounded-full flex items-center justify-center shadow-lg transition-transform active:scale-95"
-                >
-                  {isPlaying && activeAbhangId === currentAbhang.id ? (
-                    <Pause className="w-6 h-6 fill-stone-950 text-stone-950" />
-                  ) : (
-                    <Play className="w-6 h-6 fill-stone-950 text-stone-950 ml-0.5" />
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Abhang Lyrics & Playlist */}
-          <div className="lg:col-span-7 space-y-4">
-            <div className="bg-white rounded-3xl p-6 shadow-sm border border-stone-200/90 space-y-4">
-              <h3 className="text-lg font-bold text-stone-900 font-serif border-b border-stone-100 pb-3 flex items-center space-x-2">
-                <BookOpen className="w-5 h-5 text-amber-800" />
-                <span>अभंग काव्य व भावार्थ (Lyrics & Meaning)</span>
-              </h3>
-
-              <div className="bg-amber-50/50 p-5 rounded-2xl border border-amber-200/80 space-y-4 font-serif">
-                <div className="text-stone-900 text-sm leading-loose whitespace-pre-line font-medium text-center">
-                  {currentAbhang.lyricsMr}
-                </div>
-                <div className="border-t border-amber-200/60 pt-3 text-xs text-amber-950 font-sans leading-relaxed">
-                  <strong className="text-amber-900 font-bold block mb-1">भावार्थ (Meaning):</strong>
-                  {currentAbhang.translationEn}
-                </div>
-              </div>
-            </div>
-
-            {/* Abhang List */}
-            <div className="bg-white rounded-3xl p-5 shadow-sm border border-stone-200 space-y-3">
-              <h4 className="font-bold text-xs text-stone-800 uppercase tracking-wider">सर्व अभंग यादी (Playlist)</h4>
-              <div className="space-y-2">
-                {sampleAbhangs.map((item) => (
-                  <div
-                    key={item.id}
-                    onClick={() => {
-                      setActiveAbhangId(item.id);
-                      setIsPlaying(true);
-                    }}
-                    className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex justify-between items-center ${
-                      activeAbhangId === item.id
-                        ? 'bg-amber-100 border-amber-300 text-stone-950 shadow-sm'
-                        : 'bg-stone-50 hover:bg-amber-50/50 border-stone-200 text-stone-800'
-                    }`}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <span className="text-lg">🪕</span>
-                      <div>
-                        <h5 className="font-bold text-xs font-serif">{item.title}</h5>
-                        <p className="text-[11px] text-stone-500 font-sans">{item.saint}</p>
-                      </div>
-                    </div>
-                    <span className="text-xs font-bold font-mono text-stone-600">03:30</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+      {/* Search & Saint Filters */}
+      <div className="bg-white p-4 sm:p-5 rounded-3xl shadow-md border-2 border-amber-300 flex flex-col md:flex-row gap-3.5 items-center justify-between">
+        <div className="relative w-full md:w-80">
+          <Search className="w-4 h-4 text-amber-700 absolute left-3 top-3" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="अभंग, संत किंवा गायक शोधा..."
+            className="w-full pl-9 pr-3 py-2 rounded-xl border border-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500 text-xs sm:text-sm font-semibold bg-amber-50/40"
+          />
         </div>
-      )}
 
-      {/* HEALTH TIPS TAB */}
-      {guideCategory === 'health' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {healthTipsData.map((tip) => (
-            <motion.div
-              key={tip.id}
-              whileHover={{ y: -4 }}
-              className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-xl border border-stone-200/90 flex flex-col justify-between space-y-4 transition-all"
+        {/* Saint Filter Pills */}
+        <div className="flex items-center space-x-1.5 overflow-x-auto no-scrollbar w-full md:w-auto py-1">
+          {saintsList.map((saint) => (
+            <button
+              key={saint.id}
+              onClick={() => setSelectedSaint(saint.id)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${
+                selectedSaint === saint.id
+                  ? 'bg-amber-800 text-white border-amber-900 shadow'
+                  : 'bg-amber-50 text-amber-900 border-amber-200 hover:bg-amber-100'
+              }`}
             >
-              <div className="space-y-3">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-100 text-emerald-900 flex items-center justify-center text-2xl shadow-sm border border-emerald-200">
-                  {tip.icon}
-                </div>
-                <h3 className="text-lg font-bold text-stone-900 font-serif">
-                  {language === 'mr' ? tip.titleMr : tip.titleEn}
-                </h3>
-                <p className="text-xs text-stone-600 leading-relaxed font-sans">
-                  {language === 'mr' ? tip.descMr : tip.descEn}
-                </p>
-              </div>
-
-              <div className="pt-2 border-t border-stone-100 flex items-center space-x-1.5 text-xs text-emerald-700 font-bold">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                <span>डॉक्टरांचा सल्ला मानून चालत राहा</span>
-              </div>
-            </motion.div>
+              {saint.label}
+            </button>
           ))}
         </div>
-      )}
+      </div>
+
+      {/* Grid of Abhang Cards with Working YouTube Video Links */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        {filteredAbhangs.map((abhang) => {
+          const isExpanded = expandedAbhangId === abhang.id;
+
+          return (
+            <div
+              key={abhang.id}
+              className="bg-white rounded-3xl shadow-lg border-2 border-amber-300/90 overflow-hidden flex flex-col justify-between transition-all hover:border-amber-500 hover:shadow-xl"
+            >
+              <div className="p-5 space-y-4">
+                {/* Header row with thumbnail & info */}
+                <div className="flex gap-4 items-start">
+                  {/* Thumbnail with overlay badge */}
+                  <div className="relative w-24 sm:w-28 h-20 rounded-2xl overflow-hidden shrink-0 border border-amber-300 shadow-sm bg-amber-900">
+                    <img
+                      src={abhang.thumbnail}
+                      alt={abhang.title[language]}
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                      <div className="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center shadow-lg">
+                        <Play className="w-4 h-4 fill-white ml-0.5" />
+                      </div>
+                    </div>
+                    <span className="absolute bottom-1 right-1 bg-black/80 text-white text-[9px] font-mono font-bold px-1.5 py-0.2 rounded">
+                      {abhang.duration}
+                    </span>
+                  </div>
+
+                  {/* Title & Attribution */}
+                  <div className="flex-1 min-w-0">
+                    <span className="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300">
+                      {abhang.saint[language]}
+                    </span>
+                    <h3 className="text-base sm:text-lg font-bold text-amber-950 font-serif truncate mt-1">
+                      {abhang.title[language]}
+                    </h3>
+                    <p className="text-xs text-amber-800 font-semibold mt-0.5 truncate">
+                      🎙️ गायक: <span className="font-bold text-amber-950">{abhang.singer[language]}</span>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Lyrics Preview / Full */}
+                <div className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <h4 className="text-[11px] font-extrabold text-amber-900 uppercase tracking-wider font-serif flex items-center space-x-1.5">
+                      <BookOpen className="w-3.5 h-3.5 text-amber-700" />
+                      <span>अभंग बोल (Lyrics):</span>
+                    </h4>
+                    <button
+                      onClick={() => setExpandedAbhangId(isExpanded ? null : abhang.id)}
+                      className="text-[11px] font-bold text-amber-700 hover:text-amber-950 underline"
+                    >
+                      {isExpanded ? "कमी पहा (Show Less)" : "संपूर्ण बोल (Full Lyrics)"}
+                    </button>
+                  </div>
+                  <p className={`text-xs sm:text-sm font-serif text-amber-950 whitespace-pre-line leading-relaxed font-semibold ${
+                    !isExpanded ? 'line-clamp-2' : ''
+                  }`}>
+                    {abhang.lyrics[language]}
+                  </p>
+
+                  {/* English Meaning if Expanded */}
+                  {isExpanded && (
+                    <div className="pt-2 border-t border-amber-200 mt-2">
+                      <span className="text-[11px] font-extrabold text-amber-800 block mb-0.5">
+                        {getTranslation(language, 'englishTranslationTitle')}
+                      </span>
+                      <p className="text-xs text-amber-900/90 italic leading-relaxed">
+                        "{abhang.translationEn}"
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Action Buttons: Direct Working YouTube Links */}
+              <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 border-t border-amber-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+                {/* Primary Working YouTube Direct Video Link */}
+                <a
+                  href={abhang.youtubeUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 py-2.5 px-4 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-md transition-all flex items-center justify-center space-x-2 text-center"
+                >
+                  <Youtube className="w-4 h-4 fill-white" />
+                  <span>▶️ YouTube वर व्हिडिओ पहा (Open Video)</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+
+                {/* Secondary Search on YouTube Link */}
+                <a
+                  href={`https://www.youtube.com/results?search_query=${encodeURIComponent(abhang.title.mr + ' ' + abhang.singer.mr)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="py-2.5 px-3 bg-white hover:bg-amber-100 text-amber-900 font-bold text-xs rounded-xl border border-amber-300 transition-all flex items-center justify-center space-x-1.5 shadow-sm text-center"
+                >
+                  <Search className="w-3.5 h-3.5 text-amber-700" />
+                  <span>YouTube सर्च</span>
+                </a>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Warkari Health & Walking Tips Guide at the bottom */}
+      <div className="bg-gradient-to-br from-emerald-50 via-teal-50 to-emerald-100 rounded-3xl p-6 shadow-md border-2 border-emerald-300 space-y-4">
+        <h3 className="font-extrabold text-base sm:text-lg text-emerald-950 font-serif flex items-center space-x-2">
+          <HeartPulse className="w-6 h-6 text-emerald-700" />
+          <span>{getTranslation(language, 'healthTipsTitle')}</span>
+        </h3>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs sm:text-sm">
+          <div className="p-4 bg-white rounded-2xl border border-emerald-200 shadow-sm space-y-1.5">
+            <span className="text-emerald-800 font-extrabold flex items-center space-x-1.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <span>१. जल व ओआरएस (Hydration)</span>
+            </span>
+            <p className="text-emerald-950 font-medium leading-relaxed">
+              {getTranslation(language, 'tip1')}
+            </p>
+          </div>
+
+          <div className="p-4 bg-white rounded-2xl border border-emerald-200 shadow-sm space-y-1.5">
+            <span className="text-emerald-800 font-extrabold flex items-center space-x-1.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <span>२. पायांची काळजी (Foot Care)</span>
+            </span>
+            <p className="text-emerald-950 font-medium leading-relaxed">
+              {getTranslation(language, 'tip2')}
+            </p>
+          </div>
+
+          <div className="p-4 bg-white rounded-2xl border border-emerald-200 shadow-sm space-y-1.5">
+            <span className="text-emerald-800 font-extrabold flex items-center space-x-1.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <span>३. सुरक्षा व ओळख (ID Card & Safety)</span>
+            </span>
+            <p className="text-emerald-950 font-medium leading-relaxed">
+              {getTranslation(language, 'tip3')}
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

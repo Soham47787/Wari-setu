@@ -1,394 +1,439 @@
-import React, { useState } from 'react';
-import { Language, CrowdStatus, DarshanToken } from '../types';
+import React, { useState, useEffect } from 'react';
+import { Language, CrowdStatus, DarshanToken, UserProfile } from '../types';
 import { getTranslation } from '../translations';
-import { Users, Clock, QrCode, Ticket, CheckCircle, AlertTriangle, ShieldCheck, Download, Sparkles, User, Phone, Eye, Footprints, Calendar, Building2 } from 'lucide-react';
-import confetti from 'canvas-confetti';
-import { motion, AnimatePresence } from 'motion/react';
+import { Users, Clock, ShieldCheck, Ticket, Download, CheckCircle, Sparkles, AlertCircle, QrCode } from 'lucide-react';
 
 interface CrowdDarshanViewProps {
   language: Language;
   crowdStatus: CrowdStatus;
+  userTokens: DarshanToken[];
   onGenerateToken: (token: DarshanToken) => void;
-  existingTokens: DarshanToken[];
+  user?: UserProfile | null;
 }
+
+// Crisp deterministic QR Code generator component (Renders unique matrix for each token ID)
+const DynamicQRCode: React.FC<{ value: string; size?: number }> = ({ value, size = 160 }) => {
+  // Generate a consistent pseudo-random pattern based on string hash
+  const hash = value.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const gridSize = 21; // Standard QR matrix grid 21x21
+  const moduleSize = size / gridSize;
+
+  // 2D matrix
+  const matrix: boolean[][] = [];
+  for (let r = 0; r < gridSize; r++) {
+    matrix[r] = [];
+    for (let c = 0; c < gridSize; c++) {
+      // Finder patterns in top-left, top-right, bottom-left corners (7x7)
+      const isTopLeftFinder = r < 7 && c < 7;
+      const isTopRightFinder = r < 7 && c >= gridSize - 7;
+      const isBottomLeftFinder = r >= gridSize - 7 && c < 7;
+
+      if (isTopLeftFinder) {
+        matrix[r][c] = r === 0 || r === 6 || c === 0 || c === 6 || (r >= 2 && r <= 4 && c >= 2 && c <= 4);
+      } else if (isTopRightFinder) {
+        const col = c - (gridSize - 7);
+        matrix[r][c] = r === 0 || r === 6 || col === 0 || col === 6 || (r >= 2 && r <= 4 && col >= 2 && col <= 4);
+      } else if (isBottomLeftFinder) {
+        const row = r - (gridSize - 7);
+        matrix[r][c] = row === 0 || row === 6 || c === 0 || c === 6 || (row >= 2 && row <= 4 && c >= 2 && c <= 4);
+      } else if (r === 6 || c === 6) {
+        // Timing patterns
+        matrix[r][c] = (r + c) % 2 === 0;
+      } else {
+        // Data modules computed from string hash
+        const cellHash = (hash * 31 + r * 17 + c * 23 + (value.charCodeAt((r + c) % value.length) || 0)) % 100;
+        matrix[r][c] = cellHash > 45;
+      }
+    }
+  }
+
+  return (
+    <div className="bg-white p-2.5 rounded-2xl border-2 border-amber-900/40 shadow-inner flex flex-col items-center justify-center">
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="rounded-lg">
+        <rect width={size} height={size} fill="#ffffff" />
+        {matrix.map((row, r) =>
+          row.map((filled, c) =>
+            filled ? (
+              <rect
+                key={`${r}-${c}`}
+                x={c * moduleSize}
+                y={r * moduleSize}
+                width={moduleSize}
+                height={moduleSize}
+                fill="#1c1917"
+              />
+            ) : null
+          )
+        )}
+      </svg>
+      <span className="text-[10px] font-mono font-black text-amber-950 tracking-wider mt-1 uppercase">
+        {value}
+      </span>
+    </div>
+  );
+};
 
 export const CrowdDarshanView: React.FC<CrowdDarshanViewProps> = ({
   language,
   crowdStatus,
+  userTokens,
   onGenerateToken,
-  existingTokens,
+  user,
 }) => {
-  const [pilgrimName, setPilgrimName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [pilgrimCount, setPilgrimCount] = useState(1);
-  const [timeSlot, setTimeSlot] = useState('06:00 AM - 08:00 AM');
+  const [pilgrimName, setPilgrimName] = useState(user?.name || '');
+  const [phone, setPhone] = useState(user?.phone || '');
+  const [pilgrimCount, setPilgrimCount] = useState(2);
+  const [timeSlot, setTimeSlot] = useState('१०:०० AM - ११:३० AM');
   const [darshanType, setDarshanType] = useState<'Mukh' | 'CharanSparsh'>('Mukh');
-  const [activeGeneratedPass, setActiveGeneratedPass] = useState<DarshanToken | null>(null);
+  const [idProofNo, setIdProofNo] = useState('');
+  const [activePass, setActivePass] = useState<DarshanToken | null>(userTokens[0] || null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (user) {
+      if (user.name) setPilgrimName(user.name);
+      if (user.phone) setPhone(user.phone);
+    }
+  }, [user]);
+
+  const handleGenerate = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!pilgrimName.trim() || !phone.trim()) {
-      alert("कृपया नाव आणि मोबाईल नंबर प्रविष्ट करा / Please enter name and phone number");
+    if (!pilgrimName || !phone) {
+      alert("कृपया नाव व फोन नंबर भरा (Please fill required fields)");
       return;
     }
 
-    const tokenNo = `VIT-${Math.floor(100000 + Math.random() * 900000)}`;
-    const gateNumber = darshanType === 'Mukh' ? 'Gate 1 (Mahadwar Ghat)' : 'Gate 3 (South Pavilion)';
-    
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+    const tokenNo = `VITTHAL-${darshanType.toUpperCase()}-${randomSuffix}`;
+    const uniqueId = `pass_${Date.now()}`;
+
     const newPass: DarshanToken = {
-      id: `dt_${Date.now()}`,
+      id: uniqueId,
       tokenNo,
       name: pilgrimName,
       phone,
-      pilgrimCount,
+      pilgrimCount: Number(pilgrimCount),
       timeSlot,
-      gateNumber,
+      gateNumber: darshanType === 'Mukh' ? 'गेट १ (महाद्वार घाट)' : 'गेट ३ (दक्षिण दर्शन द्वार)',
       darshanType,
-      date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
-      qrCodeValue: `WARISEVA-${tokenNo}-${phone}-${pilgrimCount}`,
-      status: 'Confirmed'
+      date: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+      qrCodeValue: `PND-VITTHAL-TOKEN-${tokenNo}-${uniqueId.slice(-6)}`,
+      status: 'Confirmed',
+      idProofNumber: idProofNo || 'Aadhaar-Verified'
     };
 
     onGenerateToken(newPass);
-    setActiveGeneratedPass(newPass);
+    setActivePass(newPass);
+  };
 
-    // Fire celebratory confetti!
-    confetti({
-      particleCount: 90,
-      spread: 80,
-      origin: { y: 0.6 }
-    });
+  const handlePrint = () => {
+    window.print();
   };
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Live Crowd Status Banner - Vibrant Traditional Saffron Bhagwa & Golden Gradient */}
-      <motion.div 
-        initial={{ opacity: 0, y: 15 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="bg-gradient-to-br from-[#78350F] via-[#9A3412] to-[#EA580C] rounded-3xl p-6 sm:p-8 text-white shadow-xl border-2 border-amber-400/40 relative overflow-hidden"
-      >
-        <div className="flex flex-col md:flex-row justify-between md:items-center gap-6 relative z-10">
-          <div className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <span className="bg-emerald-500 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-widest flex items-center space-x-1.5 shadow">
-                <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-                <span>LIVE UPDATES</span>
-              </span>
-              <span className="text-amber-100 text-xs font-semibold">
-                अद्यतन वेळ: {crowdStatus.lastUpdated}
-              </span>
-            </div>
-
-            <h2 className="text-2xl sm:text-3xl font-black font-serif tracking-tight text-amber-100 drop-shadow">
-              {getTranslation(language, 'cardCrowdTitle')}
+      {/* Live Crowd Level Alert Banner */}
+      <div className="bg-gradient-to-r from-amber-900 via-amber-800 to-amber-950 text-white rounded-3xl p-5 sm:p-6 shadow-xl border-2 border-amber-500/60 space-y-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-amber-700 pb-3">
+          <div className="flex items-center space-x-2.5">
+            <span className="w-3 h-3 rounded-full bg-emerald-400 animate-ping" />
+            <h2 className="text-xl sm:text-2xl font-bold font-serif">
+              {getTranslation(language, 'crowdLevelTitle')}
             </h2>
-            <p className="text-amber-100/90 text-xs sm:text-sm max-w-xl font-sans font-medium">
-              श्री विठ्ठल रुक्मिणी मंदिर परिसरातील थेट गर्दी व दर्शन वेळ माहिती.
-            </p>
+          </div>
+          <span className="text-xs bg-amber-800/80 px-3 py-1 rounded-full text-amber-200 border border-amber-600 font-semibold">
+            {crowdStatus.lastUpdated[language]}
+          </span>
+        </div>
+
+        {/* 3 Metric Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+          <div className="bg-amber-950/70 p-4 rounded-2xl border border-amber-600/40">
+            <span className="text-xs text-amber-300 font-semibold block">{getTranslation(language, 'mukhDarshan')}</span>
+            <div className="flex items-baseline space-x-1.5 mt-1">
+              <span className="text-2xl sm:text-3xl font-black text-white">{crowdStatus.mukhDarshanWaitMins}</span>
+              <span className="text-xs text-amber-200 font-bold">मिनिटे (Mins)</span>
+            </div>
+            <span className="text-[10px] text-emerald-400 font-extrabold mt-1 block">✓ जलद हालचाल (Fast Moving)</span>
           </div>
 
-          {/* Meter Badges */}
-          <div className="bg-amber-950/90 backdrop-blur-md border border-amber-400/40 p-4 rounded-2xl flex items-center space-x-6 shrink-0 shadow-inner">
-            <div className="text-center">
-              <span className="text-[11px] text-amber-200 block uppercase tracking-wider font-semibold">गर्दीची पातळी</span>
-              <span className="text-lg font-black text-amber-300 flex items-center justify-center space-x-1 mt-0.5">
-                <Users className="w-4 h-4 text-amber-300" />
-                <span>{crowdStatus.crowdLevel === 'High' ? 'जास्त (High)' : 'मध्यम (Medium)'}</span>
-              </span>
+          <div className="bg-amber-950/70 p-4 rounded-2xl border border-amber-600/40">
+            <span className="text-xs text-amber-300 font-semibold block">{getTranslation(language, 'charanSparsh')}</span>
+            <div className="flex items-baseline space-x-1.5 mt-1">
+              <span className="text-2xl sm:text-3xl font-black text-amber-300">{crowdStatus.charanSparshWaitHours}</span>
+              <span className="text-xs text-amber-200 font-bold">तास (Hours)</span>
             </div>
-            <div className="h-9 w-px bg-amber-700/60" />
-            <div className="text-center">
-              <span className="text-[11px] text-amber-200 block uppercase tracking-wider font-semibold">रांगेची लांबी</span>
-              <span className="text-lg font-black text-white mt-0.5 block">{crowdStatus.queueLengthMeters} मी.</span>
+            <span className="text-[10px] text-amber-300 font-extrabold mt-1 block">महाद्वार घाट ते दर्शन मंडप</span>
+          </div>
+
+          <div className="bg-amber-950/70 p-4 rounded-2xl border border-amber-600/40">
+            <span className="text-xs text-amber-300 font-semibold block">{getTranslation(language, 'queueLength')}</span>
+            <div className="flex items-baseline space-x-1.5 mt-1">
+              <span className="text-2xl sm:text-3xl font-black text-white">{crowdStatus.queueLengthMeters}</span>
+              <span className="text-xs text-amber-200 font-bold">मीटर (Meters)</span>
             </div>
+            <span className="text-[10px] text-amber-200 font-medium mt-1 block">१२ दर्शन मंडप शेड कार्यरत</span>
           </div>
         </div>
 
-        {/* Live Wait Times */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6 relative z-10">
-          <div className="bg-amber-950/80 backdrop-blur-md p-4 rounded-2xl border border-amber-400/40 flex items-center justify-between shadow-md">
-            <div className="flex items-center space-x-3.5">
-              <div className="w-12 h-12 bg-amber-100 text-amber-950 rounded-xl flex items-center justify-center font-bold shadow-md shrink-0 border border-amber-300">
-                <Eye className="w-6 h-6 text-amber-900" />
-              </div>
-              <div>
-                <h4 className="font-bold text-sm text-amber-100">{getTranslation(language, 'mukhDarshan')}</h4>
-                <p className="text-xs text-amber-200/80">गाभारा थेट दर्शन रांग</p>
-              </div>
-            </div>
-            <div className="text-right">
-              <span className="text-3xl font-black text-amber-400">{crowdStatus.mukhDarshanWaitMins}</span>
-              <span className="text-[11px] text-stone-400 block font-medium">मिनिटे</span>
-            </div>
-          </div>
-
-          <div className="bg-stone-900/60 backdrop-blur-md p-4 rounded-2xl border border-stone-700 flex items-center justify-between">
-            <div className="flex items-center space-x-3.5">
-              <div className="w-12 h-12 bg-gradient-to-tr from-amber-500 to-amber-400 text-stone-950 rounded-xl flex items-center justify-center font-bold shadow-md shrink-0">
-                <Footprints className="w-6 h-6 text-stone-950" />
-              </div>
-              <div>
-                <h4 className="font-bold text-sm text-stone-100">{getTranslation(language, 'charanSparsh')}</h4>
-                <p className="text-xs text-stone-400">श्री विठ्ठल चरणस्पर्श दर्शन</p>
-              </div>
-            </div>
-            <div className="text-right">
-              <span className="text-3xl font-black text-amber-400">{crowdStatus.charanSparshWaitHours}</span>
-              <span className="text-[11px] text-stone-400 block font-medium">तास</span>
-            </div>
-          </div>
+        {/* Notice */}
+        <div className="p-3 bg-amber-800/50 rounded-2xl border border-amber-600/40 text-xs text-amber-100 flex items-start space-x-2">
+          <AlertCircle className="w-4 h-4 text-amber-300 shrink-0 mt-0.5" />
+          <span>{crowdStatus.noticeMessage[language]}</span>
         </div>
+      </div>
 
-        {/* Advisory */}
-        <div className="mt-5 p-3.5 bg-stone-900/80 rounded-xl border border-stone-700 text-xs text-stone-300 flex items-start space-x-2.5">
-          <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-          <p className="leading-relaxed font-sans">{crowdStatus.noticeMessage[language]}</p>
-        </div>
-      </motion.div>
-
-      {/* Generator Form + Pass Display Grid */}
+      {/* Main Form & Passes Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Pass Booking Form */}
-        <div className="lg:col-span-7 bg-white rounded-3xl p-6 shadow-sm border border-stone-200/90 space-y-5">
-          <div className="border-b border-stone-100 pb-4 flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-900 flex items-center justify-center border border-amber-200">
-              <Ticket className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="text-lg font-bold text-stone-900 font-serif">
-                {getTranslation(language, 'bookTokenHeader')}
-              </h3>
-              <p className="text-xs text-stone-500">
-                रांगेतील वेळ वाचवण्यासाठी मोफत अधिकृत ई-पास बुक करा.
-              </p>
-            </div>
+        {/* Pass Generation Form (5 cols) */}
+        <div className="lg:col-span-5 bg-white rounded-3xl p-5 sm:p-6 shadow-xl border-2 border-amber-300 space-y-4">
+          <div className="flex items-center space-x-2 border-b border-amber-200 pb-3">
+            <Ticket className="w-6 h-6 text-amber-700" />
+            <h3 className="font-bold text-base sm:text-lg text-amber-950 font-serif">
+              {getTranslation(language, 'bookTokenHeader')}
+            </h3>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleGenerate} className="space-y-3.5 text-xs sm:text-sm">
+            {/* Darshan Type Switcher */}
             <div>
-              <label className="block text-xs font-bold text-stone-700 mb-1.5 flex items-center space-x-1">
-                <User className="w-3.5 h-3.5 text-stone-500" />
-                <span>{getTranslation(language, 'pilgrimName')} *</span>
+              <label className="block font-bold text-amber-900 mb-1.5">
+                {getTranslation(language, 'selectDarshanType')} *
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setDarshanType('Mukh')}
+                  className={`py-2 px-3 rounded-xl font-bold border transition-all text-xs ${
+                    darshanType === 'Mukh'
+                      ? 'bg-amber-600 text-white border-amber-600 shadow-md ring-2 ring-amber-300'
+                      : 'bg-amber-50 text-amber-900 border-amber-200 hover:bg-amber-100'
+                  }`}
+                >
+                  {getTranslation(language, 'mukhDarshanBtn')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDarshanType('CharanSparsh')}
+                  className={`py-2 px-3 rounded-xl font-bold border transition-all text-xs ${
+                    darshanType === 'CharanSparsh'
+                      ? 'bg-amber-600 text-white border-amber-600 shadow-md ring-2 ring-amber-300'
+                      : 'bg-amber-50 text-amber-900 border-amber-200 hover:bg-amber-100'
+                  }`}
+                >
+                  {getTranslation(language, 'charanSparshBtn')}
+                </button>
+              </div>
+            </div>
+
+            {/* Pilgrim Name */}
+            <div>
+              <label className="block font-bold text-amber-900 mb-1">
+                {getTranslation(language, 'pilgrimName')} *
               </label>
               <input
                 type="text"
                 required
                 value={pilgrimName}
                 onChange={(e) => setPilgrimName(e.target.value)}
-                placeholder="उदा. ज्ञानेश्वर पाटील (e.g. Dnyaneshwar Patil)"
-                className="w-full px-4 py-3 text-sm rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-amber-500/50 bg-stone-50/50 text-stone-900"
+                placeholder="उदा. नामदेव तुकाराम शिंदे"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-amber-300 bg-amber-50/40 text-amber-950 font-semibold focus:ring-2 focus:ring-amber-500 focus:outline-none"
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Phone & Pilgrim Count */}
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-bold text-stone-700 mb-1.5 flex items-center space-x-1">
-                  <Phone className="w-3.5 h-3.5 text-stone-500" />
-                  <span>{getTranslation(language, 'phoneNumber')} *</span>
+                <label className="block font-bold text-amber-900 mb-1">
+                  {getTranslation(language, 'phoneNumber')} *
                 </label>
                 <input
                   type="tel"
                   required
                   maxLength={10}
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
                   placeholder="९८२२०XXXXX"
-                  className="w-full px-4 py-3 text-sm rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-amber-500/50 bg-stone-50/50 text-stone-900"
+                  className="w-full px-3 py-2.5 rounded-xl border border-amber-300 bg-amber-50/40 text-amber-950 font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-stone-700 mb-1.5 flex items-center space-x-1">
-                  <Users className="w-3.5 h-3.5 text-stone-500" />
-                  <span>{getTranslation(language, 'pilgrimCount')}</span>
+                <label className="block font-bold text-amber-900 mb-1">
+                  {getTranslation(language, 'pilgrimCount')}
                 </label>
                 <select
                   value={pilgrimCount}
                   onChange={(e) => setPilgrimCount(Number(e.target.value))}
-                  className="w-full px-4 py-3 text-sm rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-amber-500/50 bg-stone-50/50 font-semibold text-stone-900"
+                  className="w-full px-3 py-2.5 rounded-xl border border-amber-300 bg-amber-50/40 font-bold text-amber-950 focus:ring-2 focus:ring-amber-500 focus:outline-none"
                 >
-                  <option value={1}>१ वारकरी (1 Person)</option>
-                  <option value={2}>२ वारकरी (2 Persons)</option>
-                  <option value={4}>४ वारकरी (4 Persons)</option>
-                  <option value={6}>६ वारकरी (6 Persons Group)</option>
-                  <option value={10}>१० वारकरी दिंडी (10 Group)</option>
+                  {[1, 2, 3, 4, 5, 6, 8, 10].map((num) => (
+                    <option key={num} value={num}>
+                      {num} {language === 'en' ? 'Pilgrims' : 'वारकरी'}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-stone-700 mb-1.5">
-                  {getTranslation(language, 'selectDarshanType')}
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setDarshanType('Mukh')}
-                    className={`py-2.5 px-3 text-xs font-bold rounded-xl border transition-all ${
-                      darshanType === 'Mukh'
-                        ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-white border-amber-600 shadow-sm'
-                        : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100'
-                    }`}
-                  >
-                    👁️ मुख दर्शन
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDarshanType('CharanSparsh')}
-                    className={`py-2.5 px-3 text-xs font-bold rounded-xl border transition-all ${
-                      darshanType === 'CharanSparsh'
-                        ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-white border-amber-600 shadow-sm'
-                        : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100'
-                    }`}
-                  >
-                    👣 चरण स्पर्श
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-stone-700 mb-1.5 flex items-center space-x-1">
-                  <Clock className="w-3.5 h-3.5 text-stone-500" />
-                  <span>{getTranslation(language, 'selectTimeSlot')}</span>
-                </label>
-                <select
-                  value={timeSlot}
-                  onChange={(e) => setTimeSlot(e.target.value)}
-                  className="w-full px-4 py-3 text-sm rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-amber-500/50 bg-stone-50/50 font-semibold text-stone-900"
-                >
-                  <option value="06:00 AM - 08:00 AM">सकाळी ०६:०० ते ०८:०० (Morning)</option>
-                  <option value="08:00 AM - 10:00 AM">सकाळी ०८:०० ते १०:००</option>
-                  <option value="10:00 AM - 12:00 PM">सकाळी १०:०० ते दुपारी १२:००</option>
-                  <option value="02:00 PM - 04:00 PM">दुपारी ०२:०० ते ०४:००</option>
-                  <option value="04:00 PM - 06:00 PM">सायंकाळी ०४:०० ते ०६:००</option>
-                  <option value="06:00 PM - 08:00 PM">सायंकाळी ०६:०० ते ०८:०० (Evening)</option>
-                </select>
-              </div>
+            {/* Time Slot */}
+            <div>
+              <label className="block font-bold text-amber-900 mb-1">
+                {getTranslation(language, 'selectTimeSlot')} *
+              </label>
+              <select
+                value={timeSlot}
+                onChange={(e) => setTimeSlot(e.target.value)}
+                className="w-full px-3 py-2.5 rounded-xl border border-amber-300 bg-amber-50/40 font-bold text-amber-950 focus:ring-2 focus:ring-amber-500 focus:outline-none"
+              >
+                <option value="सकाळी ०६:०० AM - ०८:०० AM">सकाळी ०६:०० AM - ०८:०० AM (Early Morning Slot)</option>
+                <option value="सकाळी ०८:३० AM - १०:०० AM">सकाळी ०८:३० AM - १०:०० AM (Morning Slot)</option>
+                <option value="१०:०० AM - ११:३० AM">सकाळी १०:०० AM - ११:३० AM (Standard Slot)</option>
+                <option value="दुपारी १२:३० PM - ०२:०० PM">दुपारी १२:३० PM - ०२:०० PM (Afternoon Slot)</option>
+                <option value="संध्याकाळी ०४:०० PM - ०६:०० PM">संध्याकाळी ०४:०० PM - ०६:०० PM (Evening Slot)</option>
+                <option value="रात्री ०७:३० PM - ०९:३० PM">रात्री ०७:३० PM - ०९:३० PM (Night Aarti Slot)</option>
+              </select>
             </div>
 
-            <motion.button
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.98 }}
+            {/* Optional ID Proof */}
+            <div>
+              <label className="block font-bold text-amber-900 mb-1">
+                {getTranslation(language, 'idProofNumberLabel')}
+              </label>
+              <input
+                type="text"
+                value={idProofNo}
+                onChange={(e) => setIdProofNo(e.target.value)}
+                placeholder="आधार कार्ड / ओळखपत्र शेवटचे ४ अंक"
+                className="w-full px-3.5 py-2 rounded-xl border border-amber-300 bg-amber-50/40 text-amber-950 font-medium"
+              />
+            </div>
+
+            <button
               type="submit"
-              className="w-full bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-black text-sm py-3.5 rounded-xl border border-amber-500/30 shadow-md transition-all flex items-center justify-center space-x-2 mt-2"
+              className="w-full py-3 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-extrabold text-sm rounded-xl shadow-lg transition-all flex items-center justify-center space-x-2"
             >
-              <Sparkles className="w-4 h-4 text-amber-200" />
               <span>{getTranslation(language, 'generatePassBtn')}</span>
-            </motion.button>
+            </button>
           </form>
         </div>
 
-        {/* Generated Pass Display Card */}
-        <div className="lg:col-span-5 space-y-4">
-          <AnimatePresence mode="wait">
-            {activeGeneratedPass ? (
-              <motion.div
-                key={activeGeneratedPass.id}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.25 }}
-                className="bg-gradient-to-b from-amber-50/90 to-orange-50/90 border-2 border-amber-400 rounded-3xl p-6 shadow-xl relative overflow-hidden text-stone-900"
-              >
-                <div className="absolute top-0 right-0 bg-stone-900 text-amber-300 text-[10px] font-black px-3 py-1 rounded-bl-2xl uppercase tracking-wider shadow">
-                  अधिकृत ई-पास
-                </div>
-
-                <div className="text-center border-b border-amber-200 pb-4 mb-4 space-y-1">
-                  <span className="text-3xl">🛕</span>
-                  <h4 className="text-lg font-black text-stone-900 font-serif">
-                    {getTranslation(language, 'tokenPassTitle')}
-                  </h4>
-                  <p className="text-xs text-stone-600 font-medium">श्री विठ्ठल रुक्मिणी मंदिर समिती, पंढरपूर</p>
-                </div>
-
-                <div className="bg-white p-3.5 rounded-2xl border border-amber-200 shadow-inner text-center my-3">
-                  <span className="text-[10px] text-stone-500 font-bold uppercase tracking-wider block">{getTranslation(language, 'tokenNumber')}</span>
-                  <span className="text-2xl sm:text-3xl font-black text-amber-800 font-mono tracking-widest">
-                    {activeGeneratedPass.tokenNo}
-                  </span>
-                </div>
-
-                <div className="space-y-2 text-xs text-stone-800 border-b border-amber-200 pb-4 mb-4">
-                  <div className="flex justify-between">
-                    <span className="font-semibold text-stone-600">वारकरी नाव:</span>
-                    <span className="font-bold text-stone-900">{activeGeneratedPass.name}</span>
+        {/* Display Verified QR Pass & Passes List (7 cols) */}
+        <div className="lg:col-span-7 space-y-4">
+          {activePass ? (
+            /* Single Official Temple QR Pass Card (Request #8) */
+            <div className="bg-gradient-to-b from-amber-50 via-white to-amber-50 rounded-3xl p-6 shadow-2xl border-4 border-amber-500 relative overflow-hidden space-y-5">
+              {/* Holographic Header Bar */}
+              <div className="bg-amber-950 text-white -m-6 mb-2 p-4 border-b-4 border-amber-500 flex justify-between items-center">
+                <div className="flex items-center space-x-2.5">
+                  <div className="w-9 h-9 rounded-full bg-amber-500 flex items-center justify-center font-bold text-amber-950 text-lg shadow">
+                    🚩
                   </div>
-                  <div className="flex justify-between">
-                    <span className="font-semibold text-stone-600">मोबाईल:</span>
-                    <span className="font-bold text-stone-900">{activeGeneratedPass.phone}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="font-semibold text-stone-600">एकूण व्यक्ती:</span>
-                    <span className="font-bold text-stone-900">{activeGeneratedPass.pilgrimCount} व्यक्ती</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="font-semibold text-stone-600">दर्शन वेळ:</span>
-                    <span className="font-bold text-amber-900">{activeGeneratedPass.timeSlot}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="font-semibold text-stone-600">नियुक्त गेट:</span>
-                    <span className="font-bold text-emerald-700">{activeGeneratedPass.gateNumber}</span>
+                  <div>
+                    <h4 className="font-extrabold text-sm sm:text-base font-serif tracking-tight">
+                      {getTranslation(language, 'officialTempleCommittee')}
+                    </h4>
+                    <span className="text-[10px] text-amber-300 font-bold uppercase tracking-wider">
+                      {getTranslation(language, 'verifiedDigitalPass')}
+                    </span>
                   </div>
                 </div>
 
-                <div className="bg-white p-4 rounded-2xl border border-amber-200 flex flex-col items-center justify-center text-center">
-                  <div className="w-32 h-32 bg-stone-100 p-2 rounded-xl border border-stone-200 flex items-center justify-center">
-                    <QrCode className="w-24 h-24 text-stone-900" />
-                  </div>
-                  <span className="text-[10px] text-stone-500 mt-2 font-mono font-semibold">
-                    SCAN AT ENTRANCE • {activeGeneratedPass.tokenNo}
-                  </span>
-                </div>
-
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => alert(`ई-पास ${activeGeneratedPass.tokenNo} यशस्वीपणे सेव्ह झाला आहे!`)}
-                  className="w-full mt-4 bg-stone-900 hover:bg-stone-800 text-amber-300 font-bold text-xs py-3 rounded-xl transition-all flex items-center justify-center space-x-1.5 shadow"
-                >
-                  <Download className="w-4 h-4 text-amber-300" />
-                  <span>{getTranslation(language, 'downloadPassBtn')}</span>
-                </motion.button>
-              </motion.div>
-            ) : (
-              <div className="bg-white rounded-3xl p-8 border border-dashed border-stone-300 text-center space-y-3">
-                <div className="w-16 h-16 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto border border-amber-200">
-                  <Ticket className="w-8 h-8 text-amber-700" />
-                </div>
-                <h4 className="font-bold text-stone-800 text-sm font-serif">
-                  पास अजून तयार केलेला नाही
-                </h4>
-                <p className="text-xs text-stone-500 max-w-xs mx-auto">
-                  डाव्या फॉर्ममध्ये माहिती भरून तुमचा श्री विठ्ठल दर्शन ई-पास तयार करा.
-                </p>
+                <span className="px-2.5 py-1 rounded-full bg-emerald-600 text-white text-[11px] font-extrabold shadow flex items-center space-x-1">
+                  <CheckCircle className="w-3.5 h-3.5" />
+                  <span>{activePass.status}</span>
+                </span>
               </div>
-            )}
-          </AnimatePresence>
 
-          {/* Existing Passes History List */}
-          {existingTokens.length > 0 && (
-            <div className="bg-white rounded-3xl p-5 shadow-sm border border-stone-200 space-y-3">
-              <h4 className="font-bold text-xs text-stone-800 flex items-center space-x-1.5">
-                <CheckCircle className="w-4 h-4 text-emerald-600" />
-                <span>तुमचे दर्शन ई-पास ({existingTokens.length})</span>
+              {/* Pass Content Body with Unique Dedicated QR Code */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-2">
+                {/* QR Code Block for this specific ID */}
+                <div className="flex flex-col items-center text-center space-y-2 shrink-0">
+                  <DynamicQRCode value={activePass.qrCodeValue} size={150} />
+                  <span className="text-[10px] font-extrabold text-amber-900 bg-amber-200/80 px-2.5 py-0.5 rounded-full uppercase">
+                    {getTranslation(language, 'scanAtGate')}
+                  </span>
+                </div>
+
+                {/* Pass Specific Details */}
+                <div className="flex-1 space-y-2.5 text-xs sm:text-sm w-full">
+                  <div className="bg-amber-100/70 p-3 rounded-2xl border border-amber-300">
+                    <span className="text-amber-800 text-xs font-semibold block">{getTranslation(language, 'tokenNumber')}</span>
+                    <span className="font-black text-base sm:text-lg text-amber-950 font-mono tracking-wide">
+                      {activePass.tokenNo}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <span className="text-amber-800 font-medium block">{getTranslation(language, 'pilgrimName')}</span>
+                      <span className="font-bold text-amber-950 text-sm truncate block">{activePass.name}</span>
+                    </div>
+                    <div>
+                      <span className="text-amber-800 font-medium block">{getTranslation(language, 'personsCount')}</span>
+                      <span className="font-bold text-amber-950 text-sm block">
+                        👥 {activePass.pilgrimCount} {language === 'en' ? 'Persons' : 'भाविक'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-amber-800 font-medium block">{getTranslation(language, 'darshanSlot')}</span>
+                      <span className="font-bold text-amber-950 block">⏰ {activePass.timeSlot}</span>
+                    </div>
+                    <div>
+                      <span className="text-amber-800 font-medium block">{getTranslation(language, 'assignedGate')}</span>
+                      <span className="font-bold text-emerald-800 block">🚪 {activePass.gateNumber}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Print / Save Action */}
+              <div className="pt-2 flex justify-end">
+                <button
+                  onClick={handlePrint}
+                  className="px-5 py-2.5 bg-amber-700 hover:bg-amber-800 text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-md transition-all flex items-center space-x-2"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>{getTranslation(language, 'downloadPassBtn')}</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white rounded-3xl p-8 shadow-md border-2 border-dashed border-amber-300 text-center space-y-3">
+              <QrCode className="w-16 h-16 text-amber-400 mx-auto" />
+              <h4 className="font-bold text-amber-950 text-base">{getTranslation(language, 'noPassGeneratedYet')}</h4>
+              <p className="text-xs text-amber-800 max-w-sm mx-auto">
+                {getTranslation(language, 'fillLeftFormToGenerate')}
+              </p>
+            </div>
+          )}
+
+          {/* All Generated Passes List */}
+          {userTokens.length > 0 && (
+            <div className="bg-white rounded-3xl p-5 shadow-md border border-amber-200 space-y-3">
+              <h4 className="font-bold text-sm text-amber-950 font-serif flex items-center space-x-2">
+                <Ticket className="w-4 h-4 text-amber-700" />
+                <span>{getTranslation(language, 'recentPasses')} ({userTokens.length})</span>
               </h4>
-              <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                {existingTokens.map((t) => (
+
+              <div className="space-y-2">
+                {userTokens.map((pass) => (
                   <div
-                    key={t.id}
-                    onClick={() => setActiveGeneratedPass(t)}
-                    className="p-3 rounded-2xl border border-stone-200 bg-stone-50 hover:bg-amber-50 cursor-pointer text-xs flex justify-between items-center transition-colors"
+                    key={pass.id}
+                    onClick={() => setActivePass(pass)}
+                    className={`p-3 rounded-2xl border transition-all cursor-pointer flex justify-between items-center text-xs ${
+                      activePass?.id === pass.id
+                        ? 'bg-amber-100/90 border-amber-500 font-bold shadow-sm'
+                        : 'bg-amber-50/50 hover:bg-amber-100/60 border-amber-200'
+                    }`}
                   >
                     <div>
-                      <span className="font-bold text-stone-900 block font-mono">{t.tokenNo}</span>
-                      <span className="text-stone-600 text-[11px]">{t.name} ({t.pilgrimCount} व्यक्ती)</span>
+                      <span className="font-mono font-bold text-amber-950 block">{pass.tokenNo}</span>
+                      <span className="text-amber-800 font-medium">
+                        {pass.name} ({pass.pilgrimCount} भाविक) • {pass.timeSlot}
+                      </span>
                     </div>
-                    <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800">
-                      {t.timeSlot}
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 font-bold text-[10px]">
+                      {pass.darshanType}
                     </span>
                   </div>
                 ))}

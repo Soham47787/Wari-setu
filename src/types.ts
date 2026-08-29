@@ -8,23 +8,49 @@ export type TabType =
   | 'lost' 
   | 'sos' 
   | 'abhang' 
-  | 'volunteer';
+  | 'volunteer'
+  | 'profile';
 
-export interface PilgrimProfile {
+export type UserRole = 
+  | 'warkari' 
+  | 'volunteer' 
+  | 'dindi_pramukh' 
+  | 'trustee' 
+  | 'medical_staff' 
+  | 'police_security';
+
+export interface UserProfile {
   id: string;
   name: string;
   phone: string;
+  city: string;
+  gender: 'male' | 'female' | 'other' | string;
+  email?: string;
+  role: UserRole;
+  bloodGroup?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  district?: string;
+  dindiName?: string;
   isLoggedIn: boolean;
-  language: Language;
+  avatarUrl?: string;
 }
 
 export interface CrowdStatus {
-  lastUpdated: string;
+  lastUpdated: {
+    mr: string;
+    hi: string;
+    en: string;
+  };
   crowdLevel: 'Low' | 'Medium' | 'High' | 'Critical';
   mukhDarshanWaitMins: number;
   charanSparshWaitHours: number;
   queueLengthMeters: number;
-  activeGates: string[];
+  activeGates: {
+    mr: string;
+    hi: string;
+    en: string;
+  }[];
   noticeMessage: {
     mr: string;
     hi: string;
@@ -44,7 +70,21 @@ export interface DarshanToken {
   date: string;
   qrCodeValue: string;
   status: 'Confirmed' | 'Completed' | 'Cancelled';
+  idProofNumber?: string;
 }
+
+export type MapCategory = 
+  | 'palkhi' 
+  | 'temple' 
+  | 'hotel'
+  | 'stay' 
+  | 'food' 
+  | 'water' 
+  | 'medical' 
+  | 'parking'
+  | 'shoe_stand'
+  | 'toilet' 
+  | 'ringan';
 
 export interface MapPoint {
   id: string;
@@ -53,7 +93,7 @@ export interface MapPoint {
     hi: string;
     en: string;
   };
-  category: 'palkhi' | 'temple' | 'water' | 'medical' | 'stay' | 'food' | 'toilet' | 'ringan';
+  category: MapCategory;
   lat: number;
   lng: number;
   description: {
@@ -62,7 +102,47 @@ export interface MapPoint {
     en: string;
   };
   contactPhone?: string;
-  occupancyOrStatus?: string;
+  occupancyOrStatus?: {
+    mr: string;
+    hi: string;
+    en: string;
+  };
+  priceOrFree?: {
+    mr: string;
+    hi: string;
+    en: string;
+  };
+  address?: {
+    mr: string;
+    hi: string;
+    en: string;
+  };
+}
+
+export interface RoomBookingDetails {
+  id: string;
+  bookingRef: string;
+  accommodationId: string;
+  accommodationName: string;
+  primaryGuestName: string;
+  phone: string;
+  email?: string;
+  idProofType: 'Aadhaar Card' | 'Voter ID' | 'Driving License' | 'Passport';
+  idProofNumber: string;
+  adultCount: number;
+  childCount: number;
+  seniorCitizenCount: number;
+  totalGuests: number;
+  checkInDate: string;
+  checkInTimeSlot: string;
+  checkOutDate: string;
+  roomOrBedType: string;
+  specialAssistance: string[];
+  purposeOfVisit: string;
+  emergencyContactName: string;
+  emergencyContactPhone: string;
+  bookedAt: string;
+  status: 'Confirmed' | 'Checked-In' | 'Cancelled';
 }
 
 export interface AccommodationItem {
@@ -72,7 +152,7 @@ export interface AccommodationItem {
     hi: string;
     en: string;
   };
-  type: 'BhaktaNiwas' | 'Matha' | 'School' | 'TentCity' | 'PrivateCamp';
+  type: 'BhaktaNiwas' | 'Hotel' | 'Matha' | 'School' | 'TentCity' | 'PrivateCamp';
   address: {
     mr: string;
     hi: string;
@@ -82,10 +162,12 @@ export interface AccommodationItem {
   totalBeds: number;
   availableBeds: number;
   isFree: boolean;
+  pricePerNight?: string;
   contactPhone: string;
-  facilities: string[]; // e.g. ['wheelchair', 'hotwater', 'food', 'charging', 'medical']
+  facilities: string[];
   lat: number;
   lng: number;
+  image?: string;
 }
 
 export interface AnnachhatraItem {
@@ -126,7 +208,11 @@ export interface LostItem {
     hi: string;
     en: string;
   };
-  missingSince: string;
+  missingSince: {
+    mr: string;
+    hi: string;
+    en: string;
+  };
   contactPerson: string;
   contactPhone: string;
   description: {
@@ -135,7 +221,6 @@ export interface LostItem {
     en: string;
   };
   status: 'missing' | 'found';
-  audioNoteUrl?: string;
 }
 
 export interface SOSAlert {
@@ -148,15 +233,38 @@ export interface SOSAlert {
   lng?: number;
   timestamp: string;
   status: 'active' | 'assigned' | 'resolved';
-  responderInfo?: string;
+  responderInfo?: {
+    mr: string;
+    hi: string;
+    en: string;
+  };
 }
 
 export interface AbhangItem {
   id: string;
-  title: string;
-  saint: string;
-  lyricsMr: string;
-  lyricsHi: string;
+  title: {
+    mr: string;
+    hi: string;
+    en: string;
+  };
+  saint: {
+    mr: string;
+    hi: string;
+    en: string;
+  };
+  singer: {
+    mr: string;
+    hi: string;
+    en: string;
+  };
+  lyrics: {
+    mr: string;
+    hi: string;
+    en: string;
+  };
   translationEn: string;
-  audioUrl?: string;
+  youtubeUrl: string;
+  youtubeId: string;
+  duration: string;
+  thumbnail: string;
 }
